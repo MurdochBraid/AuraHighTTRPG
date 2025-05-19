@@ -203,6 +203,12 @@
     </div>
   </div>
 
+  <footer style="margin-top: 40px; display: flex; justify-content: space-between;">
+    <button onclick="saveToFile()">Save Character</button>
+    <input type="file" id="loadFileInput" style="display:none;" onchange="handleFileLoad(event)">
+    <button onclick="loadFromFile()">Load Character</button>
+  </footer>
+
   <script>
     let editingSpellRow = null;
 
@@ -432,6 +438,117 @@
       const row = button.parentElement.parentElement;
       row.remove();
     }
+
+    function saveToFile() {
+      const characterData = {
+        name: document.getElementById('characterName').innerText,
+        class: document.getElementById('displayClass').innerText,
+        description: document.getElementById('classDescription').innerText,
+        stats: {
+          intelligence: document.getElementById('intelligence').innerText,
+          power: document.getElementById('power').innerText,
+          fortitude: document.getElementById('fortitude').innerText,
+          speed: document.getElementById('speed').innerText,
+          magic: document.getElementById('magic').innerText,
+          attunement: document.getElementById('attunement').innerText,
+        },
+        currentHP: document.getElementById('currentHP').innerText,
+        maxHP: document.getElementById('maxHP').innerText,
+        currentMana: document.getElementById('currentMana').innerText,
+        maxMana: document.getElementById('maxMana').innerText,
+        cunningActions: document.getElementById('cunningActions').innerText,
+        spells: [],
+        characterImage: document.getElementById('characterImage').src || null
+      };
+
+      const spellRows = document.querySelectorAll('#spellTableBody tr');
+      spellRows.forEach(row => {
+        const cells = row.querySelectorAll('td');
+        characterData.spells.push({
+          name: cells[0].innerText,
+          effect: cells[1].innerText,
+          cost: cells[2].innerText,
+          damage: cells[3].innerText
+        });
+      });
+
+      const blob = new Blob([JSON.stringify(characterData, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = characterData.name.replace(/\s+/g, '_') + '_character.json';
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    function loadFromFile() {
+      document.getElementById('loadFileInput').click();
+    }
+
+    function handleFileLoad(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function (e) {
+        try {
+          const data = JSON.parse(e.target.result);
+          loadCharacterData(data);
+        } catch (err) {
+          alert('Failed to load file: Invalid JSON format.');
+        }
+      };
+      reader.readAsText(file);
+    }
+
+    function loadCharacterData(data) {
+      document.getElementById('characterName').innerText = data.name || '';
+      document.getElementById('displayClass').innerText = data.class || '';
+      document.getElementById('classDescription').innerText = data.description || '';
+      document.getElementById('characterDesc').innerText = `${data.class} - ${data.description}`;
+
+      document.getElementById('intelligence').innerText = data.stats.intelligence;
+      document.getElementById('power').innerText = data.stats.power;
+      document.getElementById('fortitude').innerText = data.stats.fortitude;
+      document.getElementById('speed').innerText = data.stats.speed;
+      document.getElementById('magic').innerText = data.stats.magic;
+      document.getElementById('attunement').innerText = data.stats.attunement;
+
+      document.getElementById('currentHP').innerText = data.currentHP;
+      document.getElementById('maxHP').innerText = data.maxHP;
+      document.getElementById('currentMana').innerText = data.currentMana;
+      document.getElementById('maxMana').innerText = data.maxMana;
+      document.getElementById('cunningActions').innerText = data.cunningActions;
+
+      const spellTable = document.getElementById('spellTableBody');
+      spellTable.innerHTML = '';
+      (data.spells || []).forEach(spell => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+      <td>${spell.name}</td>
+      <td>${spell.effect}</td>
+      <td>${spell.cost}</td>
+      <td>${spell.damage}</td>
+      <td>
+        <button onclick="castSpell(this)" class="cast-button">Cast</button>
+        <button onclick="editSpell(this)">Edit</button>
+        <button class="delete-button" onclick="deleteSpell(this)">Delete</button>
+      </td>
+    `;
+        spellTable.appendChild(row);
+      });
+
+      if (data.characterImage) {
+        const image = document.getElementById('characterImage');
+        image.src = data.characterImage;
+        image.style.display = 'block';
+      }
+
+      updateSpellButtons();
+    }
+
+
   </script>
 </body>
 
