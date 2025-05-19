@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TTRPG Character Sheet</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      background: #f4f4f4;
+    }
+
+    .stats-form {
+      display: flex;
+      gap: 50px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+
+    .stat {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .inline-group {
+      display: inline;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: #fff;
+    }
+
+    th,
+    td {
+      border: 1px solid #ccc;
+      padding: 10px;
+      text-align: left;
+    }
+
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 1;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      overflow: auto;
+      background-color: rgba(0, 0, 0, 0.4);
+    }
+
+    .modal-content {
+      background-color: #fff;
+      margin: 15% auto;
+      padding: 20px;
+      border: 1px solid #888;
+      width: 300px;
+    }
+
+    .modal-footer {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      margin-top: 10px;
+    }
+
+    #attunementContainer {
+      display: none;
+    }
+
+    #characterImage {
+      display: block;
+      max-width: 200px;
+      margin: 10px 0;
+    }
+
+    .delete-button {
+      background-color: #e74c3c;
+      color: white;
+      border: none;
+      padding: 5px 10px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+
+
+<!-- TODO - try and autosave the file to disk whenever a change like casting a spell, long resting, taking damage, or editing stats is done -->
+<!-- Or at leat display something indicating dirty record and needs to be saved -->
+
+
+
+<body>
+  <h1>Character Sheet</h1>
+
+  <input type="file" id="imageUpload" accept="image/*" onchange="handleImageUpload()" style="display: none;">
+  <input type="button" value="Upload Character Image" onclick="document.getElementById('imageUpload').click();" />
+  <img id="characterImage" src="" alt="Character Image" style="display:none;" />
+
+  <h2 id="characterName"></h2>
+  <h3 id="characterDesc"></h3>
+  <div id="characterInfoForm" class="stats-form">
+    <div class="stat" style="display:none">Class: <span id="displayClass"></span></div>
+    <div class="stat" style="display:none">Description: <span id="classDescription"></span></div>
+
+    <div class="stat">
+      <span class="inline-group">HP: <span id="currentHP">0</span>/<span id="maxHP">0</span></span>
+      <input type="number" id="damageTaken" placeholder="Damage" />
+      <button onclick="takeDamage()">Take Damage</button>
+    </div>
+
+    <div class="stat">
+      <span class="inline-group">Mana: <span id="currentMana">0</span>/<span id="maxMana">0</span></span>
+    </div>
+
+    <div class="stat">
+      Cunning Actions: <span id="cunningActions">0</span>
+      <button onclick="useCunningAction()">Use</button>
+    </div>
+
+    <div class="stat">
+      <input type="text" id="restNote" placeholder="Rest duration" />
+      <button onclick="rest()">Rest</button>
+      <button onclick="longRest()">Long Rest</button>
+    </div>
+  </div>
+
+  <br />
+  <br />
+
+  <div class="stats-form" id="statsDisplay">
+    <div class="stat">Intelligence: <span id="intelligence">0</span></div>
+    <div class="stat">Power: <span id="power">0</span></div>
+    <div class="stat">Fortitude: <span id="fortitude">0</span></div>
+    <div class="stat">Speed: <span id="speed">0</span></div>
+    <div class="stat">Magic Reserves: <span id="magic">0</span></div>
+    <div class="stat" id="attunementDisplay" style="display: none;">Attunement: <span id="attunement">0</span></div>
+    <button onclick="openModal()">Edit Stats</button>
+  </div>
+
+  <h2>Spells</h2>
+  <button onclick="openSpellModal()">Add Spell</button>
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Effect</th>
+        <th>Cost</th>
+        <th>Damage</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody id="spellTableBody">
+      <!-- Empty for now -->
+    </tbody>
+  </table>
+
+  <div id="statsModal" class="modal">
+    <div class="modal-content">
+      <h3>Edit Stats</h3>
+      <form id="statsForm">
+        <label>Name: <input type="text" id="inputName" /></label><br />
+        <label>Class:
+          <select id="classSelect" onchange="toggleAttunement()">
+            <option value="Caster">Caster</option>
+            <option value="Spirit Guardian">Spirit Guardian</option>
+          </select>
+        </label><br />
+        <label>Description: <input type="text" id="inputDescription" /></label><br /><br />
+        <label>Intelligence: <input type="number" id="inputIntelligence" max="100" /></label><br />
+        <label>Power: <input type="number" id="inputPower" max="100" /></label><br />
+        <label>Fortitude: <input type="number" id="inputFortitude" max="100" /></label><br />
+        <label>Speed: <input type="number" id="inputSpeed" max="100" /></label><br />
+        <label>Magic Reserves: <input type="number" id="inputMagic" max="100" /></label><br />
+        <div id="attunementContainer">
+          <label>Attunement: <input type="number" id="inputAttunement" max="20" /></label>
+        </div>
+        <div class="modal-footer">
+          <button type="button" onclick="saveStats()">Save</button>
+          <button type="button" onclick="closeModal()">Cancel</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div id="spellModal" class="modal">
+    <div class="modal-content">
+      <h3>Edit Spell</h3>
+      <form id="spellForm">
+        <label>Name: <input type="text" id="spellName"></label><br />
+        <label>Effect: <input type="text" id="spellEffect"></label><br />
+        <label>Cost: <input type="number" id="spellCost"></label><br />
+        <label>Damage: <input type="number" id="spellDamage"></label><br />
+        <div class="modal-footer">
+          <button type="button" onclick="saveSpell()">Save</button>
+          <button type="button" onclick="closeSpellModal()">Cancel</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    let editingSpellRow = null;
+
+    function openModal() {
+      document.getElementById('statsModal').style.display = 'block';
+
+
+      // Set the values based off current values
+
+      document.getElementById('inputName').value = document.getElementById('characterName').innerText;
+      document.getElementById('classSelect').value = document.getElementById('displayClass').innerText;
+      document.getElementById('inputDescription').value = document.getElementById('classDescription').innerText;
+      document.getElementById('inputIntelligence').value = document.getElementById('intelligence').innerText;
+      document.getElementById('inputPower').value = document.getElementById('power').innerText;
+      document.getElementById('inputFortitude').value = document.getElementById('fortitude').innerText;
+      document.getElementById('inputSpeed').value = document.getElementById('speed').innerText;
+      document.getElementById('inputMagic').value = document.getElementById('magic').innerText;
+      document.getElementById('inputAttunement').value = document.getElementById('attunement').innerText;
+
+
+      toggleAttunement();
+    }
+
+    function closeModal() {
+      document.getElementById('statsModal').style.display = 'none';
+    }
+
+    function toggleAttunement() {
+      const classValue = document.getElementById('classSelect').value;
+      const attunementInput = document.getElementById('attunementContainer');
+      const attunementDisplay = document.getElementById('attunementDisplay');
+
+      if (classValue === 'Spirit Guardian') {
+        attunementInput.style.display = 'block';
+        attunementDisplay.style.display = 'block';
+      } else {
+        attunementInput.style.display = 'none';
+        attunementDisplay.style.display = 'none';
+      }
+    }
+
+    function validateStat(value, max) {
+      const num = parseInt(value);
+      return !isNaN(num) && num >= 0 && num <= max;
+    }
+
+    function saveStats() {
+      const stats = [
+        { id: 'inputIntelligence', display: 'intelligence', max: 100 },
+        { id: 'inputPower', display: 'power', max: 100 },
+        { id: 'inputFortitude', display: 'fortitude', max: 100 },
+        { id: 'inputSpeed', display: 'speed', max: 100 },
+        { id: 'inputMagic', display: 'magic', max: 100 }
+      ];
+
+      for (const stat of stats) {
+        const input = document.getElementById(stat.id).value;
+        if (!validateStat(input, stat.max)) {
+          alert(`${stat.display.charAt(0).toUpperCase() + stat.display.slice(1)} must be between 0 and ${stat.max}`);
+          return;
+        }
+        document.getElementById(stat.display).innerText = input;
+      }
+
+      const classValue = document.getElementById('classSelect').value;
+      if (classValue === 'Spirit Guardian') {
+        const attunementVal = document.getElementById('inputAttunement').value;
+        if (!validateStat(attunementVal, 20)) {
+          alert("Attunement must be between 0 and 20");
+          return;
+        }
+        document.getElementById('attunement').innerText = attunementVal;
+      }
+
+      // Update the character name and class + description here
+      document.getElementById('characterName').innerText = document.getElementById('inputName').value;
+      document.getElementById('displayClass').innerText = document.getElementById('classSelect').value;
+      document.getElementById('classDescription').innerText = document.getElementById('inputDescription').value;
+
+      document.getElementById('characterDesc').innerText = document.getElementById('classSelect').value + " - " + document.getElementById('inputDescription').value;
+
+      updateDerivedStats();
+
+      closeModal();
+    }
+
+    function updateDerivedStats() {
+      const fortitude = parseInt(document.getElementById('fortitude').innerText) || 0;
+      const magic = parseInt(document.getElementById('magic').innerText) || 0;
+      const speed = parseInt(document.getElementById('speed').innerText) || 0;
+
+      const maxHP = fortitude * 5;
+      const maxMana = magic * 10;
+      const cunning = Math.floor(speed / 20);
+
+      document.getElementById('maxHP').innerText = maxHP;
+      document.getElementById('currentHP').innerText = maxHP;
+      document.getElementById('maxMana').innerText = maxMana;
+      document.getElementById('currentMana').innerText = maxMana;
+      document.getElementById('cunningActions').innerText = cunning;
+    }
+
+    function takeDamage() {
+      let dmg = parseInt(document.getElementById('damageTaken').value) || 0;
+      let current = parseInt(document.getElementById('currentHP').innerText);
+      document.getElementById('currentHP').innerText = Math.max(0, current - dmg);
+      // Clear the input
+      document.getElementById('damageTaken').value = 0;
+    }
+
+    function useCunningAction() {
+      let ca = parseInt(document.getElementById('cunningActions').innerText);
+      if (ca > 0) document.getElementById('cunningActions').innerText = ca - 1;
+    }
+
+    function rest() {
+      const note = document.getElementById('restNote').value;
+      console.log('Rest note:', note);
+      // Add your custom logic here
+    }
+
+    function longRest() {
+      document.getElementById('currentHP').innerText = document.getElementById('maxHP').innerText;
+      document.getElementById('currentMana').innerText = document.getElementById('maxMana').innerText;
+      updateDerivedStats();
+    }
+
+    function handleImageUpload() {
+      const input = document.getElementById('imageUpload');
+      const image = document.getElementById('characterImage');
+      const file = input.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = function (e) {
+          image.src = e.target.result;
+          image.style.display = 'block';
+        };
+        reader.readAsDataURL(file);
+      }
+    }
+
+    function openSpellModal(context) {
+
+      if (!editingSpellRow) {
+        document.getElementById('spellForm').reset();
+      }
+
+      document.getElementById('spellModal').style.display = 'block';
+    }
+
+    function closeSpellModal() {
+      editingSpellRow = null;
+      document.getElementById('spellModal').style.display = 'none';
+    }
+
+    function saveSpell() {
+      const name = document.getElementById('spellName').value;
+      const effect = document.getElementById('spellEffect').value;
+      const cost = document.getElementById('spellCost').value;
+      const damage = document.getElementById('spellDamage').value;
+
+      if (editingSpellRow) {
+        const cells = editingSpellRow.getElementsByTagName('td');
+        cells[0].innerText = name;
+        cells[1].innerText = effect;
+        cells[2].innerText = cost;
+        cells[3].innerText = damage;
+        editingSpellRow = null;
+      } else {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+      <td>${name}</td>
+      <td>${effect}</td>
+      <td>${cost}</td>
+      <td>${damage}</td>
+      <td>
+        <button onclick="castSpell(this)">Cast</button>
+        <button onclick="editSpell(this)">Edit</button>
+        <button class="delete-button" onclick="deleteSpell(this)">Delete</button>
+      </td>
+    `;
+        document.getElementById('spellTableBody').appendChild(row);
+      }
+
+      closeSpellModal();
+    }
+
+    function editSpell(button) {
+      const row = button.parentElement.parentElement;
+      const cells = row.getElementsByTagName('td');
+
+      document.getElementById('spellName').value = cells[0].innerText;
+      document.getElementById('spellEffect').value = cells[1].innerText;
+      document.getElementById('spellCost').value = cells[2].innerText;
+      document.getElementById('spellDamage').value = cells[3].innerText;
+
+      editingSpellRow = row;
+      openSpellModal();
+    }
+
+    function castSpell(button) {
+      const row = button.parentElement.parentElement;
+      const cells = row.getElementsByTagName('td');
+
+      let cost = cells[2].innerText;
+      let currMana = document.getElementById('currentMana').innerHTML;
+
+      document.getElementById('currentMana').innerHTML = currMana - cost;
+    }
+
+    function deleteSpell(button) {
+      const row = button.parentElement.parentElement;
+      row.remove();
+    }
+  </script>
+</body>
+
+</html>
