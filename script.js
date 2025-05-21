@@ -156,11 +156,16 @@ function rest() {
     const note = document.getElementById('restNote').value;
     console.log('Rest note:', note);
     // Add your custom logic here
+    // Restore hp and mana by a % based on rest duration and level of fort + MR
+    document.getElementById('restNote').value = "";
+    resetModifiers();
 }
 
 function longRest() {
     document.getElementById('currentHP').innerText = document.getElementById('maxHP').innerText;
     document.getElementById('currentMana').innerText = document.getElementById('maxMana').innerText;
+
+    resetModifiers();
     updateDerivedStats();
 }
 

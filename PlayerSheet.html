@@ -68,7 +68,45 @@
     }
 
     .inline-group {
-      display: inline;
+      font-size: 18px;
+      font-weight: bold;
+      margin-bottom: 8px;
+    }
+
+    .stat input[type="number"],
+    .stat input[type="text"] {
+      width: 100%;
+      font-size: 14px;
+      padding: 4px 6px;
+      margin-bottom: 6px;
+      border-radius: 4px;
+      border: 1px solid #aaa;
+      box-sizing: border-box;
+    }
+
+    .stat button {
+      font-size: 14px;
+      padding: 5px 10px;
+      margin-top: 4px;
+      margin-right: 4px;
+      background-color: #4a90e2;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+
+    .stat button:hover {
+      background-color: #357ab8;
+    }
+
+    .button-group {
+      display: flex;
+      gap: 8px;
+      flex-wrap: nowrap;
+      /* optional: prevent stacking */
+      margin-top: 4px;
     }
 
     table {
@@ -147,30 +185,46 @@
   <h2 id="characterName"></h2>
   <h3 id="characterDesc"></h3>
   <div id="characterInfoForm" class="stats-form">
-    <div class="stat" style="display:none">Class: <span id="displayClass"></span></div>
-    <div class="stat" style="display:none">Description: <span id="classDescription"></span></div>
+
+    <div class="stat" style="display:none">
+      <label>Class</label>
+      <div id="displayClass"></div>
+    </div>
+
+    <div class="stat" style="display:none">
+      <label>Description</label>
+      <div id="classDescription"></div>
+    </div>
 
     <div class="stat">
-      <span class="inline-group">HP: <span id="currentHP">0</span>/<span id="maxHP">0</span></span>
+      <label>HP</label>
+      <div class="inline-group"><span id="currentHP">0</span>/<span id="maxHP">0</span></div>
       <input type="number" id="damageTaken" placeholder="Damage" />
       <button onclick="takeDamage()">Take Damage</button>
     </div>
 
     <div class="stat">
-      <span class="inline-group">Mana: <span id="currentMana">0</span>/<span id="maxMana">0</span></span>
+      <label>Mana</label>
+      <div class="inline-group"><span id="currentMana">0</span>/<span id="maxMana">0</span></div>
     </div>
 
     <div class="stat">
-      Cunning Actions: <span id="cunningActions">0</span>
+      <label>Cunning Actions</label>
+      <div><span id="cunningActions">0</span></div>
       <button onclick="useCunningAction()">Use</button>
     </div>
 
     <div class="stat">
+      <label>Rest</label>
       <input type="text" id="restNote" placeholder="Rest duration" />
-      <button onclick="rest()">Rest</button>
-      <button onclick="longRest()">Long Rest</button>
+      <div class="button-group">
+        <button onclick="rest()">Rest</button>
+        <button onclick="longRest()">Long Rest</button>
+      </div>
     </div>
+
   </div>
+
 
   <br />
   <br />
