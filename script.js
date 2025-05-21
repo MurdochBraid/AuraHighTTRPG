@@ -45,6 +45,10 @@ function updateStat(input) {
     const base = parseInt(statElem.dataset.base, 10);
     const mod = parseInt(input.value, 10) || 0;
     statElem.textContent = base + mod;
+
+    // I need to update max/ current HP, same with max/current mana
+    //updateMaxHP();
+    //updateMaxMana();
 }
 
 function updateSkill(input) {
@@ -83,6 +87,21 @@ function validateStat(value, max) {
     return !isNaN(num) && num >= 0 && num <= max;
 }
 
+function setStatValue(statId, newBaseValue) {
+    const statElem = document.getElementById(statId);
+    if (!statElem) return;
+
+    // Update base value attribute
+    statElem.dataset.base = newBaseValue;
+
+    // Check for an associated modifier input
+    const modInput = document.getElementById(`${statId}-mod`);
+    const modifier = modInput ? parseInt(modInput.value || "0", 10) : 0;
+
+    // Update displayed value with base + modifier
+    statElem.textContent = newBaseValue + modifier;
+}
+
 function saveStats() {
     const stats = [{
             id: 'inputIntelligence',
@@ -117,7 +136,7 @@ function saveStats() {
             alert(`${stat.display.charAt(0).toUpperCase() + stat.display.slice(1)} must be between 0 and ${stat.max}`);
             return;
         }
-        document.getElementById(stat.display).innerText = input;
+        setStatValue(stat.display, input);
     }
 
     const classValue = document.getElementById('classSelect').value;
@@ -143,6 +162,8 @@ function saveStats() {
 }
 
 function updateDerivedStats() {
+    const intelligence = parseInt(document.getElementById('intelligence').innerText) || 0;
+    const power = parseInt(document.getElementById('power').innerText) || 0;
     const fortitude = parseInt(document.getElementById('fortitude').innerText) || 0;
     const magic = parseInt(document.getElementById('magic').innerText) || 0;
     const speed = parseInt(document.getElementById('speed').innerText) || 0;
@@ -156,6 +177,22 @@ function updateDerivedStats() {
     document.getElementById('maxMana').innerText = maxMana;
     document.getElementById('currentMana').innerText = maxMana;
     document.getElementById('cunningActions').innerText = cunning;
+
+    // Update the values of all of my skills here too
+    setStatValue('alchemy', Math.floor(intelligence / 10) - 4);
+    setStatValue('summoning', Math.floor(intelligence / 10) - 4);
+    setStatValue('illusion', Math.floor(intelligence / 10) - 4);
+    setStatValue('rune_crafting', Math.floor(intelligence / 10) - 4);
+    setStatValue('athletics', Math.floor(power / 10) - 4);
+    setStatValue('constitution', Math.floor(fortitude / 10) - 4);
+    setStatValue('dodge', Math.min(20, 20 - Math.floor(speed / 10) + 4));
+
+    // Retrigger any modifiers for skills
+    const skillModifiers = document.querySelectorAll(".skill-modifier");
+
+    skillModifiers.forEach(input => {
+        updateSkill(input);
+    });
 
     updateSpellButtons();
 }
@@ -362,18 +399,14 @@ function loadCharacterData(data) {
     document.getElementById('classDescription').innerText = data.description || '';
     document.getElementById('characterDesc').innerText = `${data.class} - ${data.description}`;
 
-    document.getElementById('intelligence').innerText = data.stats.intelligence;
-    document.getElementById('power').innerText = data.stats.power;
-    document.getElementById('fortitude').innerText = data.stats.fortitude;
-    document.getElementById('speed').innerText = data.stats.speed;
-    document.getElementById('magic').innerText = data.stats.magic;
-    document.getElementById('attunement').innerText = data.stats.attunement;
+    setStatValue('intelligence', data.stats.intelligence);
+    setStatValue('power', data.stats.power);
+    setStatValue('fortitude', data.stats.fortitude);
+    setStatValue('speed', data.stats.speed);
+    setStatValue('magic', data.stats.magic);
+    setStatValue('attunement', data.stats.attunement);
 
-    document.getElementById('currentHP').innerText = data.currentHP;
-    document.getElementById('maxHP').innerText = data.maxHP;
-    document.getElementById('currentMana').innerText = data.currentMana;
-    document.getElementById('maxMana').innerText = data.maxMana;
-    document.getElementById('cunningActions').innerText = data.cunningActions;
+    updateDerivedStats();
 
     const spellTable = document.getElementById('spellTableBody');
     spellTable.innerHTML = '';
