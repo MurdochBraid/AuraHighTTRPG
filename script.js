@@ -16,7 +16,6 @@ function openModal() {
     document.getElementById('inputMagic').value = document.getElementById('magic').innerText;
     document.getElementById('inputAttunement').value = document.getElementById('attunement').innerText;
 
-
     toggleAttunement();
 }
 
