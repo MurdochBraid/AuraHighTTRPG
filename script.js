@@ -30,6 +30,12 @@ document.addEventListener("DOMContentLoaded", () => {
     modifiers.forEach(input => {
         input.addEventListener("input", () => updateStat(input));
     });
+
+    const skillModifiers = document.querySelectorAll(".skill-modifier");
+
+    skillModifiers.forEach(input => {
+        input.addEventListener("input", () => updateSkill(input));
+    });
 });
 
 // Generic stat update function
@@ -39,6 +45,14 @@ function updateStat(input) {
     const base = parseInt(statElem.dataset.base, 10);
     const mod = parseInt(input.value, 10) || 0;
     statElem.textContent = base + mod;
+}
+
+function updateSkill(input) {
+    const skillId = input.id.replace("-mod", "");
+    const skillElem = document.getElementById(skillId);
+    const base = parseInt(skillElem.dataset.base, 10);
+    const mod = parseInt(input.value, 10) || 0;
+    skillElem.textContent = base + mod;
 }
 
 // Reset all modifiers and restore base stat values
@@ -70,12 +84,31 @@ function validateStat(value, max) {
 }
 
 function saveStats() {
-    const stats = [
-        { id: 'inputIntelligence', display: 'intelligence', max: 100 },
-        { id: 'inputPower', display: 'power', max: 100 },
-        { id: 'inputFortitude', display: 'fortitude', max: 100 },
-        { id: 'inputSpeed', display: 'speed', max: 100 },
-        { id: 'inputMagic', display: 'magic', max: 100 }
+    const stats = [{
+            id: 'inputIntelligence',
+            display: 'intelligence',
+            max: 100
+        },
+        {
+            id: 'inputPower',
+            display: 'power',
+            max: 100
+        },
+        {
+            id: 'inputFortitude',
+            display: 'fortitude',
+            max: 100
+        },
+        {
+            id: 'inputSpeed',
+            display: 'speed',
+            max: 100
+        },
+        {
+            id: 'inputMagic',
+            display: 'magic',
+            max: 100
+        }
     ];
 
     for (const stat of stats) {
@@ -291,7 +324,9 @@ function saveToFile() {
         });
     });
 
-    const blob = new Blob([JSON.stringify(characterData, null, 2)], { type: 'application/json' });
+    const blob = new Blob([JSON.stringify(characterData, null, 2)], {
+        type: 'application/json'
+    });
     const url = URL.createObjectURL(blob);
 
     const a = document.createElement('a');
