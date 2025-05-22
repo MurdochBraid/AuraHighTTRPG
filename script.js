@@ -250,6 +250,14 @@ function longRest() {
     renderPowers();
 }
 
+function auraLoss() {
+    document.getElementById('aura').innerText = +document.getElementById('aura').innerText - 1;
+}
+
+function auraFarm() {
+    document.getElementById('aura').innerText = +document.getElementById('aura').innerText + 1;
+}
+
 function handleImageUpload() {
     const input = document.getElementById('imageUpload');
     const image = document.getElementById('characterImage');
