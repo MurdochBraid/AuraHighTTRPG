@@ -45,7 +45,7 @@ function updateStat(input) {
     const mod = parseInt(input.value, 10) || 0;
     statElem.textContent = base + mod;
 
-    // I need to update skills, max/ current HP, and max/current mana
+    // Update skills, temp HP, and temp mana
     refreshSkills();
     updateTempHP();
     updateTempMana();
@@ -244,15 +244,27 @@ function takeDamage() {
     let damage = parseInt(document.getElementById('damageTaken').value);
     if (isNaN(damage) || damage <= 0) return;
 
+    // Calculate Fortitude-based damage reduction
+    const fort = parseInt(document.getElementById('fortitude').getAttribute('data-base')) || 0;
+    const fortMod = parseInt(document.getElementById('fortitude-mod').value) || 0;
+    const totalFort = fort + fortMod;
+    let damageReduction = 0;
+
+    if (totalFort > 20) {
+        damageReduction = Math.min(40, 40 * ((totalFort - 20) / 80) ** 0.6);
+    }
+
+    let reducedDamage = Math.ceil(damage * (1 - damageReduction / 100));
+
     let currentHP = parseInt(document.getElementById('currentHP').innerText);
     let tempHP = parseInt(document.getElementById('tempHP').innerText);
 
     if (tempHP > 0) {
-        if (damage <= tempHP) {
-            tempHP -= damage;
-            damage = 0;
+        if (reducedDamage <= tempHP) {
+            tempHP -= reducedDamage;
+            reducedDamage = 0;
         } else {
-            damage -= tempHP;
+            reducedDamage -= tempHP;
             tempHP = 0;
         }
         document.getElementById('tempHP').innerText = tempHP;
@@ -261,7 +273,7 @@ function takeDamage() {
         }
     }
 
-    currentHP = Math.max(currentHP - damage, 0);
+    currentHP = Math.max(currentHP - reducedDamage, 0);
     document.getElementById('currentHP').innerText = currentHP;
     document.getElementById('damageTaken').value = '';
 }
