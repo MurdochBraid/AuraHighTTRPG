@@ -163,22 +163,27 @@
   <br />
   <br />
 
-  <h2>Spells</h2>
-  <button onclick="openSpellModal()">Add Spell</button>
-  <table>
-    <thead>
-      <tr>
-        <th>Name</th>
-        <th>Effect</th>
-        <th>Cost</th>
-        <th>Damage</th>
-        <th>Actions</th>
-      </tr>
-    </thead>
-    <tbody id="spellTableBody">
-      <!-- Empty for now -->
-    </tbody>
-  </table>
+  <div class="spells-container">
+    <h2>Spells</h2>
+    <button onclick="openSpellModal()">Add Spell</button>
+
+    <table class="spells-table">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Effect</th>
+          <th>Cost</th>
+          <th>Cast Time / Duration</th>
+          <th>Range</th>
+          <th>Damage</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody id="spellTableBody">
+        <!-- Rows added dynamically -->
+      </tbody>
+    </table>
+  </div>
 
   <div class="inventory-container">
     <h2>Inventory</h2>
@@ -241,6 +246,8 @@
         <label>Name: <input type="text" id="spellName"></label><br />
         <label>Effect: <input type="text" id="spellEffect"></label><br />
         <label>Cost: <input type="number" id="spellCost"></label><br />
+        <label>Cast Time / Duration: <input type="text" id="spellCastTimeDuration"></label><br />
+        <label>Range: <input type="text" id="spellRange"></label><br />
         <label>Damage: <input type="number" id="spellDamage"></label><br />
         <div class="modal-footer">
           <button type="button" onclick="saveSpell()">Save</button>

@@ -218,3 +218,75 @@ td {
 .inventory-container>button:hover {
   background-color: #28a745;
 }
+
+.spells-container {
+  margin-top: 30px;
+  padding: 15px;
+  border: 1px solid #ccc;
+  border-radius: 12px;
+  max-width: 100%;
+}
+
+.spells-container>h2 {
+  margin-top: 0;
+}
+
+.spells-container>button {
+  margin-bottom: 10px;
+  padding: 8px 12px;
+  border: none;
+  background-color: #2c7;
+  color: white;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.spells-container>button:hover {
+  background-color: #28a745;
+}
+
+.spells-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.spells-table th,
+.spells-table td {
+  border: 1px solid #aaa;
+  padding: 8px;
+  text-align: left;
+}
+
+.spells-table button {
+  padding: 4px 10px;
+  border: none;
+  background-color: #c44;
+  color: white;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.spells-table button:hover {
+  background-color: #a33;
+}
+
+.cast-button {
+  padding: 6px 12px;
+  border: none;
+  background-color: #28a745 !important;
+  /* green for active */
+  color: white;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.cast-button:hover {
+  background-color: #218838 !important;
+}
+
+.cast-button:disabled {
+  background-color: #999 !important;
+  cursor: not-allowed;
+  opacity: 0.7;
+}

@@ -189,7 +189,6 @@ function refreshSkills() {
     const intelligence = parseInt(document.getElementById('intelligence').innerText) || 0;
     const power = parseInt(document.getElementById('power').innerText) || 0;
     const fortitude = parseInt(document.getElementById('fortitude').innerText) || 0;
-    const magic = parseInt(document.getElementById('magic').innerText) || 0;
     const speed = parseInt(document.getElementById('speed').innerText) || 0;
 
     setStatValue('alchemy', Math.floor(intelligence / 10) - 4);
@@ -259,7 +258,7 @@ function handleImageUpload() {
     }
 }
 
-function openSpellModal(context) {
+function openSpellModal() {
 
     if (!editingSpellRow) {
         document.getElementById('spellForm').reset();
@@ -277,6 +276,8 @@ function saveSpell() {
     const name = document.getElementById('spellName').value;
     const effect = document.getElementById('spellEffect').value;
     const cost = document.getElementById('spellCost').value;
+    const castTimeDuration = document.getElementById('spellCastTimeDuration').value;
+    const range = document.getElementById('spellRange').value;
     const damage = document.getElementById('spellDamage').value;
 
     if (editingSpellRow) {
@@ -284,15 +285,19 @@ function saveSpell() {
         cells[0].innerText = name;
         cells[1].innerText = effect;
         cells[2].innerText = cost;
-        cells[3].innerText = damage;
+        cells[3].innerText = castTimeDuration;
+        cells[4].innerText = range;
+        cells[5].innerText = damage;
         editingSpellRow = null;
     } else {
         const row = document.createElement('tr');
         row.innerHTML = `
-      <td>${name}</td>
-      <td>${effect}</td>
-      <td>${cost}</td>
-      <td>${damage}</td>
+    <td>${name}</td>
+    <td>${effect}</td>
+    <td>${cost}</td>
+    <td>${castTimeDuration}</td>
+    <td>${range}</td>
+    <td>${damage}</td>
       <td>
         <button onclick="castSpell(this)" class="cast-button">Cast</button>
         <button onclick="editSpell(this)">Edit</button>
@@ -301,6 +306,8 @@ function saveSpell() {
     `;
         document.getElementById('spellTableBody').appendChild(row);
     }
+
+    updateSpellButtons();
 
     closeSpellModal();
 }
@@ -312,7 +319,9 @@ function editSpell(button) {
     document.getElementById('spellName').value = cells[0].innerText;
     document.getElementById('spellEffect').value = cells[1].innerText;
     document.getElementById('spellCost').value = cells[2].innerText;
-    document.getElementById('spellDamage').value = cells[3].innerText;
+    document.getElementById('spellCastTimeDuration').value = cells[3].innerText;
+    document.getElementById('spellRange').value = cells[4].innerText;
+    document.getElementById('spellDamage').value = cells[5].innerText;
 
     editingSpellRow = row;
     openSpellModal();
@@ -386,6 +395,8 @@ function saveToFile() {
             name: cells[0].innerText,
             effect: cells[1].innerText,
             cost: cells[2].innerText,
+            castTimeDuration: cells[3].innerText,
+            range: cells[4].innerText,
             damage: cells[3].innerText
         });
     });
@@ -445,6 +456,8 @@ function loadCharacterData(data) {
       <td>${spell.name}</td>
       <td>${spell.effect}</td>
       <td>${spell.cost}</td>
+      <td>${spell.castTimeDuration}</td>
+      <td>${spell.range}</td>
       <td>${spell.damage}</td>
       <td>
         <button onclick="castSpell(this)" class="cast-button">Cast</button>
