@@ -23,16 +23,21 @@ When entering combat, turn order is determined by speed / 20 + 1d20, highest val
 
 ### Combat turn
 A turn by a character may looks something like the following:
+
 Optional movement of up to speed / 5 tiles (movement taken here reduces available movement later in the turn).
+
 The player may then take an action:
 - Cast a spell
 - Drink a potion
 - Perform a physical attack
+
 More optional movement using remaining available tiles.
+
 The player may optionally consume a cunning action (fully restored on long rest) to perform another action.
 Some spells, like haste, may grant a bonus turn on the turn they cast, and on proceeding turns. This action may also be used, if a bonus action is not used it is not passed on to the next turn.
 
 ### Dealing and taking damage
 Any spell cast is assumed to hit unless the target takes the dodge reaction (a number of speed / 20 dodge reactions may occur between a characters turns). The character taking the dodge action rolls 1d20 against their dodge challenge stat, they must meet or beat the challenge to perform the dodge. Not all effects can be dodged, this is at the discretion of the DM. Dodge attempts where the roll is below 4 critically fail and the character performing the failed dodge takes an aura loss.
+
 Physical attacks can be performed within 1 tile of the target (unless otherwise specified) and can be dodged. They deal power / 2 damage to their target.
 Players have built in percentage damage resistance based on their fortitude (starting from fortitude 20) where up to 40% of damage can be mitigated. This calculation is built into the character sheet.
