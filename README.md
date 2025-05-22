@@ -56,6 +56,6 @@ Common spells are available to all magic users once they have learned the spell.
 Potions can be brewed by students that have gathered the reagents required for the potion. These reagents can generally be foraged for, taken as drops from encounters, or bought. A list of common potions, their ingredients, and their effects is as below.
 When brewing a potion the efficacy is determined by adding 1d20 to the character's alchemy modifier and calculating the percentage of maximum efficacy, the reagent will also have a % realisation of maximum efficacy. Be sure to take note of reagent quality when gathering reagents.
 
-- Restore health (Restores 1000 HP to the drinker). Requires wormwood bark, crimson thistle petals, and stagroot extract.
+- Restore health (Restores 500 HP to the drinker). Requires wormwood bark, crimson thistle petals, and stagroot extract.
 - Restore mana (Restores 500 Mana to the drinker). Requires azure lotus leaf, moonwell water, and dried mana thread.
 - Water breathing (Grants 2 hours of water breathing to the drinker). Requires gillcap spores, kelp oil, and salamander scales.
