@@ -218,6 +218,7 @@ function refreshSkills() {
     const power = parseInt(document.getElementById('power').innerText) || 0;
     const fortitude = parseInt(document.getElementById('fortitude').innerText) || 0;
     const speed = parseInt(document.getElementById('speed').innerText) || 0;
+    const aura = parseInt(document.getElementById('aura').innerText) || 0;
 
     const currentHP = parseInt(document.getElementById('currentHP').innerText) || 0;
     const maxHP = parseInt(document.getElementById('maxHP').innerText) || 1; // Avoid divide by 0
@@ -225,12 +226,15 @@ function refreshSkills() {
     const penalty = Math.floor((1 - hpRatio) / 0.25); // -1 per 25% missing
 
     setStatValue('alchemy', Math.floor(intelligence / 10) - 4 - penalty);
+    setStatValue('arcana', Math.floor(intelligence / 10) - 4 - penalty);
     setStatValue('curse', Math.floor(intelligence / 10) - 4 - penalty);
     setStatValue('illusion', Math.floor(intelligence / 10) - 4 - penalty);
     setStatValue('rune_crafting', Math.floor(intelligence / 10) - 4 - penalty);
     setStatValue('summoning', Math.floor(intelligence / 10) - 4 - penalty);
     setStatValue('athletics', Math.floor(power / 10) - 4 - penalty);
+    setStatValue('beast_handling', Math.floor(power / 10) - 4 - penalty);
     setStatValue('constitution', Math.floor(fortitude / 10) - 4 - penalty);
+    setStatValue('diplomacy', Math.floor(intelligence / 10) + aura - 4 - penalty);
     setStatValue('resolve', Math.floor(intelligence / 10) + Math.floor(fortitude / 10) - 4 - penalty);
     setStatValue('stealth', Math.floor(speed / 10) - 4 - penalty);
 
@@ -413,10 +417,12 @@ function restoreHP(amount) {
 
 function auraLoss() {
     document.getElementById('aura').innerText = +document.getElementById('aura').innerText - 1;
+    refreshSkills();
 }
 
 function auraFarm() {
     document.getElementById('aura').innerText = +document.getElementById('aura').innerText + 1;
+    refreshSkills();
 }
 
 function handleImageUpload() {
