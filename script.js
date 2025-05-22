@@ -401,12 +401,24 @@ function handleImageUpload() {
     const input = document.getElementById('imageUpload');
     const image = document.getElementById('characterImage');
     const file = input.files[0];
+
     if (file) {
         const reader = new FileReader();
+
         reader.onload = function (e) {
+            image.onload = function () {
+                image.style.display = 'block';
+
+                const maxWidth = 800;
+                const scaleFactor = Math.min(1, maxWidth / image.naturalWidth);
+
+                image.width = image.naturalWidth * scaleFactor;
+                image.height = image.naturalHeight * scaleFactor;
+            };
+
             image.src = e.target.result;
-            image.style.display = 'block';
         };
+
         reader.readAsDataURL(file);
     }
 }
