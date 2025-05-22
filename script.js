@@ -693,6 +693,7 @@ function handleFileLoad(event) {
 function loadCharacterData(data) {
     document.getElementById('characterName').innerText = data.name || '';
     document.getElementById('displayClass').innerText = data.class || '';
+    document.getElementById('classSelect').value = data.class || '';
     document.getElementById('classDescription').innerText = data.description || '';
     document.getElementById('characterDesc').innerText = `${data.class} - ${data.description}`;
 
@@ -775,6 +776,7 @@ function loadCharacterData(data) {
 
     renderPowers();
     updateSpellButtons();
+    toggleAttunement();
 }
 
 function showTab(containerId) {
