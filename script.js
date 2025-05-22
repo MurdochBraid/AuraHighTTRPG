@@ -9,11 +9,11 @@ function openModal() {
     document.getElementById('inputName').value = document.getElementById('characterName').innerText;
     document.getElementById('classSelect').value = document.getElementById('displayClass').innerText;
     document.getElementById('inputDescription').value = document.getElementById('classDescription').innerText;
-    document.getElementById('inputIntelligence').value = document.getElementById('intelligence').innerText;
-    document.getElementById('inputPower').value = document.getElementById('power').innerText;
-    document.getElementById('inputFortitude').value = document.getElementById('fortitude').innerText;
-    document.getElementById('inputSpeed').value = document.getElementById('speed').innerText;
-    document.getElementById('inputMagic').value = document.getElementById('magic').innerText;
+    document.getElementById('inputIntelligence').value = document.getElementById('intelligence').dataset.base;
+    document.getElementById('inputPower').value = document.getElementById('power').dataset.base;
+    document.getElementById('inputFortitude').value = document.getElementById('fortitude').dataset.base;
+    document.getElementById('inputSpeed').value = document.getElementById('speed').dataset.base;
+    document.getElementById('inputMagic').value = document.getElementById('magic').dataset.base;
     document.getElementById('inputAttunement').value = document.getElementById('attunement').innerText;
 
     toggleAttunement();
@@ -45,7 +45,8 @@ function updateStat(input) {
     const mod = parseInt(input.value, 10) || 0;
     statElem.textContent = base + mod;
 
-    // I need to update max/ current HP, same with max/current mana
+    // I need to update skills, max/ current HP, and max/current mana
+    refreshSkills();
     //updateMaxHP();
     //updateMaxMana();
 }
@@ -103,31 +104,26 @@ function setStatValue(statId, newBaseValue) {
 
 function saveStats() {
     const stats = [{
-            id: 'inputIntelligence',
-            display: 'intelligence',
-            max: 100
-        },
-        {
-            id: 'inputPower',
-            display: 'power',
-            max: 100
-        },
-        {
-            id: 'inputFortitude',
-            display: 'fortitude',
-            max: 100
-        },
-        {
-            id: 'inputSpeed',
-            display: 'speed',
-            max: 100
-        },
-        {
-            id: 'inputMagic',
-            display: 'magic',
-            max: 100
-        }
-    ];
+        id: 'inputIntelligence',
+        display: 'intelligence',
+        max: 100
+    }, {
+        id: 'inputPower',
+        display: 'power',
+        max: 100
+    }, {
+        id: 'inputFortitude',
+        display: 'fortitude',
+        max: 100
+    }, {
+        id: 'inputSpeed',
+        display: 'speed',
+        max: 100
+    }, {
+        id: 'inputMagic',
+        display: 'magic',
+        max: 100
+    }];
 
     for (const stat of stats) {
         const input = document.getElementById(stat.id).value;
@@ -135,7 +131,7 @@ function saveStats() {
             alert(`${stat.display.charAt(0).toUpperCase() + stat.display.slice(1)} must be between 0 and ${stat.max}`);
             return;
         }
-        setStatValue(stat.display, input);
+        setStatValue(stat.display, +input);
     }
 
     const classValue = document.getElementById('classSelect').value;
@@ -148,7 +144,7 @@ function saveStats() {
         document.getElementById('attunement').innerText = attunementVal;
     }
 
-    // Update the character name and class + description here
+    // Update the character name and class + description
     document.getElementById('characterName').innerText = document.getElementById('inputName').value;
     document.getElementById('displayClass').innerText = document.getElementById('classSelect').value;
     document.getElementById('classDescription').innerText = document.getElementById('inputDescription').value;
@@ -161,8 +157,6 @@ function saveStats() {
 }
 
 function updateDerivedStats() {
-    const intelligence = parseInt(document.getElementById('intelligence').innerText) || 0;
-    const power = parseInt(document.getElementById('power').innerText) || 0;
     const fortitude = parseInt(document.getElementById('fortitude').innerText) || 0;
     const magic = parseInt(document.getElementById('magic').innerText) || 0;
     const speed = parseInt(document.getElementById('speed').innerText) || 0;
@@ -178,13 +172,7 @@ function updateDerivedStats() {
     document.getElementById('cunningActions').innerText = cunning;
 
     // Update the values of all of my skills here too
-    setStatValue('alchemy', Math.floor(intelligence / 10) - 4);
-    setStatValue('summoning', Math.floor(intelligence / 10) - 4);
-    setStatValue('illusion', Math.floor(intelligence / 10) - 4);
-    setStatValue('rune_crafting', Math.floor(intelligence / 10) - 4);
-    setStatValue('athletics', Math.floor(power / 10) - 4);
-    setStatValue('constitution', Math.floor(fortitude / 10) - 4);
-    setStatValue('dodge', Math.min(20, 20 - Math.floor(speed / 10) + 4));
+    refreshSkills();
 
     // Retrigger any modifiers for skills
     const skillModifiers = document.querySelectorAll(".skill-modifier");
@@ -195,6 +183,24 @@ function updateDerivedStats() {
 
     updateSpellButtons();
 }
+
+
+function refreshSkills() {
+    const intelligence = parseInt(document.getElementById('intelligence').innerText) || 0;
+    const power = parseInt(document.getElementById('power').innerText) || 0;
+    const fortitude = parseInt(document.getElementById('fortitude').innerText) || 0;
+    const magic = parseInt(document.getElementById('magic').innerText) || 0;
+    const speed = parseInt(document.getElementById('speed').innerText) || 0;
+
+    setStatValue('alchemy', Math.floor(intelligence / 10) - 4);
+    setStatValue('summoning', Math.floor(intelligence / 10) - 4);
+    setStatValue('illusion', Math.floor(intelligence / 10) - 4);
+    setStatValue('rune_crafting', Math.floor(intelligence / 10) - 4);
+    setStatValue('athletics', Math.floor(power / 10) - 4);
+    setStatValue('constitution', Math.floor(fortitude / 10) - 4);
+    setStatValue('dodge', Math.min(20, 20 - Math.floor(speed / 10) + 4));
+}
+
 
 function updateSpellButtons() {
     const currentMana = parseInt(document.getElementById('currentMana').innerText);
@@ -228,6 +234,7 @@ function rest() {
     // Restore hp and mana by a % based on rest duration and level of fort + MR
     document.getElementById('restNote').value = "";
     resetModifiers();
+    refreshSkills();
 }
 
 function longRest() {
