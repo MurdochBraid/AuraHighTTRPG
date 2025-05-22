@@ -225,11 +225,14 @@ function refreshSkills() {
     const penalty = Math.floor((1 - hpRatio) / 0.25); // -1 per 25% missing
 
     setStatValue('alchemy', Math.floor(intelligence / 10) - 4 - penalty);
-    setStatValue('summoning', Math.floor(intelligence / 10) - 4 - penalty);
+    setStatValue('curse', Math.floor(intelligence / 10) - 4 - penalty);
     setStatValue('illusion', Math.floor(intelligence / 10) - 4 - penalty);
     setStatValue('rune_crafting', Math.floor(intelligence / 10) - 4 - penalty);
+    setStatValue('summoning', Math.floor(intelligence / 10) - 4 - penalty);
     setStatValue('athletics', Math.floor(power / 10) - 4 - penalty);
     setStatValue('constitution', Math.floor(fortitude / 10) - 4 - penalty);
+    setStatValue('resolve', Math.floor(intelligence / 10) + Math.floor(fortitude / 10) - 4 - penalty);
+    setStatValue('stealth', Math.floor(speed / 10) - 4 - penalty);
 
     setStatValue('dodge', Math.min(20, 20 - Math.floor(speed / 10) + 4 + penalty));
 }
