@@ -209,6 +209,7 @@ function updateDerivedStats() {
     });
 
     updateSpellButtons();
+    updateBodyBackground();
 }
 
 
@@ -285,6 +286,25 @@ function takeDamage() {
 
     // Possibly apply any damage skill penalties
     refreshSkills();
+    updateBodyBackground();
+}
+
+function updateBodyBackground() {
+    const currentHP = parseInt(document.getElementById('currentHP').innerText) || 0;
+    const maxHP = parseInt(document.getElementById('maxHP').innerText) || 1;
+
+    const missingRatio = 1 - (currentHP / maxHP);
+    const intensity = Math.pow(missingRatio, 2); // Sharper effect at low HP
+
+    // From light gray (#f4f4f4) → maroon (#800000)
+    const baseR = 244, baseG = 244, baseB = 244;
+    const targetR = 128, targetG = 0, targetB = 0;
+
+    const r = Math.floor(baseR + (targetR - baseR) * intensity);
+    const g = Math.floor(baseG + (targetG - baseG) * intensity);
+    const b = Math.floor(baseB + (targetB - baseB) * intensity);
+
+    document.body.style.backgroundColor = `rgb(${r}, ${g}, ${b})`;
 }
 
 function useMana(cost) {
@@ -352,6 +372,7 @@ function rest() {
 
     resetModifiers();
     refreshSkills();
+    updateBodyBackground();
 }
 
 function longRest() {
