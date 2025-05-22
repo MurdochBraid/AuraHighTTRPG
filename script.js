@@ -102,6 +102,13 @@ function setStatValue(statId, newBaseValue) {
     statElem.textContent = newBaseValue + modifier;
 }
 
+function getStatValue(statId) {
+    const statElem = document.getElementById(statId);
+    if (!statElem) return 0;
+
+    return statElem.innerHTML;
+}
+
 function saveStats() {
     const stats = [{
         id: 'inputIntelligence',
@@ -227,11 +234,36 @@ function useCunningAction() {
 }
 
 function rest() {
-    const note = document.getElementById('restNote').value;
-    console.log('Rest note:', note);
-    // Add your custom logic here
-    // Restore hp and mana by a % based on rest duration and level of fort + MR
-    document.getElementById('restNote').value = "";
+    const duration = +document.getElementById('restDuration').value;
+    if (isNaN(duration) || duration <= 0) {
+        alert("Please enter a valid rest duration (in hours).");
+        return;
+    }
+
+    const maxHP = parseInt(document.getElementById('maxHP').innerText);
+    const currentHP = parseInt(document.getElementById('currentHP').innerText);
+    const maxMana = parseInt(document.getElementById('maxMana').innerText);
+    const currentMana = parseInt(document.getElementById('currentMana').innerText);
+
+    const fortitude = getStatValue('fortitude');
+    const magicReserves = getStatValue('magic');
+
+    // Calculate percentage restore per hour
+    const hpRegenPerHour = 5 + Math.floor(fortitude / 10); // e.g., Fortitude 20 = +2%
+    const manaRegenPerHour = 5 + Math.floor(magicReserves / 10);
+
+    const hpRestore = Math.floor((hpRegenPerHour * duration / 100) * maxHP);
+    const manaRestore = Math.floor((manaRegenPerHour * duration / 100) * maxMana);
+
+    const newHP = Math.min(maxHP, currentHP + hpRestore);
+    const newMana = Math.min(maxMana, currentMana + manaRestore);
+
+    document.getElementById('currentHP').innerText = newHP;
+    document.getElementById('currentMana').innerText = newMana;
+
+    // Clear the input
+    document.getElementById('restDuration').value = "";
+
     resetModifiers();
     refreshSkills();
 }
