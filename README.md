@@ -41,3 +41,21 @@ Any spell cast is assumed to hit unless the target takes the dodge reaction (a n
 
 Physical attacks can be performed within 1 tile of the target (unless otherwise specified) and can be dodged. They deal power / 2 damage to their target.
 Players have built in percentage damage resistance based on their fortitude (starting from fortitude 20) where up to 40% of damage can be mitigated. This calculation is built into the character sheet.
+
+## Common Spells
+
+Common spells are available to all magic users once they have learned the spell. A list of available spells is as below. Spells can be learned at 3 different levels; normal, greater, and supreme. Generally first years will only be capable of learning normal level common spells.
+
+- Haste (Increases speed by 10 / 20 / 40 and grants bonus actions)
+- Reinforce (Increases fortitude by 10 / 20 / 40 and grants temporary HP)
+- Insight (Increases intelligence and magic reserves by 10 / 20 / 40 and grants temporary mana)
+- Fly (Grants ability to fly and a fly speed of 20 / 60 / 100)
+
+## Potion brewing
+
+Potions can be brewed by students that have gathered the reagents required for the potion. These reagents can generally be foraged for, taken as drops from encounters, or bought. A list of common potions, their ingredients, and their effects is as below.
+When brewing a potion the efficacy is determined by adding 1d20 to the character's alchemy modifier and calculating the percentage of maximum efficacy, the reagent will also have a % realisation of maximum efficacy. Be sure to take note of reagent quality when gathering reagents.
+
+- Restore health (Restores 1000 HP to the drinker). Requires wormwood bark, crimson thistle petals, and stagroot extract.
+- Restore mana (Restores 500 Mana to the drinker). Requires azure lotus leaf, moonwell water, and dried mana thread.
+- Water breathing (Grants 2 hours of water breathing to the drinker). Requires gillcap spores, kelp oil, and salamander scales.
