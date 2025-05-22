@@ -180,6 +180,32 @@
     </tbody>
   </table>
 
+  <div class="inventory-container">
+    <h2>Inventory</h2>
+
+    <!-- Currency Display -->
+    <div class="currency-display">
+      <label for="currency">Currency:</label>
+      <input type="number" id="currency" value="0" />
+    </div>
+
+    <!-- Inventory Table -->
+    <table class="inventory-table">
+      <thead>
+        <tr>
+          <th>Description</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody id="inventoryBody">
+        <!-- Items will be added here -->
+      </tbody>
+    </table>
+
+    <button onclick="addInventoryItem()">Add Item</button>
+  </div>
+
+
   <div id="statsModal" class="modal">
     <div class="modal-content">
       <h3>Edit Stats</h3>

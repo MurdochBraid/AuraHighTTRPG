@@ -334,6 +334,29 @@ function deleteSpell(button) {
     row.remove();
 }
 
+function addInventoryItem() {
+    const tbody = document.getElementById("inventoryBody");
+
+    const tr = document.createElement("tr");
+
+    const descTd = document.createElement("td");
+    const input = document.createElement("input");
+    input.type = "text";
+    input.placeholder = "Item description";
+    descTd.appendChild(input);
+
+    const actionTd = document.createElement("td");
+    const delBtn = document.createElement("button");
+    delBtn.textContent = "Delete";
+    delBtn.onclick = () => tr.remove();
+    actionTd.appendChild(delBtn);
+
+    tr.appendChild(descTd);
+    tr.appendChild(actionTd);
+    tbody.appendChild(tr);
+}
+
+
 function saveToFile() {
     const characterData = {
         name: document.getElementById('characterName').innerText,
