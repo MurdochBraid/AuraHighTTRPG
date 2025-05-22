@@ -81,6 +81,23 @@ window.onclick = function (event) {
     }
 };
 
+function resizeMap() {
+    const offset = 80; // adjust this to leave room for headers, controls, etc.
+    const mapElement = document.getElementById('map');
+    mapElement.style.height = (window.innerHeight - offset) + 'px';
+
+    // If the map is already initialized:
+    if (typeof map !== 'undefined') {
+        map.invalidateSize();
+    }
+}
+
+// Initial resize
+resizeMap();
+
+// Resize on window resize
+window.addEventListener('resize', resizeMap);
+
 // Export notes
 document.getElementById('exportNotes').addEventListener('click', () => {
     const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(notes, null, 2));
