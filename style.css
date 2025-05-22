@@ -1,393 +1,420 @@
 body {
-  font-family: Arial, sans-serif;
-  padding: 20px;
-  background: #f4f4f4;
+    font-family: Arial, sans-serif;
+    padding: 20px;
+    background: #f4f4f4;
 }
 
 .stats-form {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 20px;
-  align-items: center;
-  position: relative;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    align-items: center;
+    position: relative;
 }
 
 .stat {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  width: 125px;
-  height: 120px;
-  padding: 10px;
-  border: 1px solid #ccc;
-  border-radius: 8px;
-  background-color: #f9f9f9;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 125px;
+    height: 120px;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    background-color: #f9f9f9;
 }
 
 .stat label {
-  font-weight: bold;
-  margin-bottom: 5px;
-  text-align: center;
+    font-weight: bold;
+    margin-bottom: 5px;
+    text-align: center;
 }
 
 .stat-main {
-  font-size: 32px;
-  font-weight: bold;
-  margin-bottom: 5px;
+    font-size: 32px;
+    font-weight: bold;
+    margin-bottom: 5px;
 }
 
 .modifier {
-  width: 60px;
-  font-size: 14px;
-  text-align: center;
-  padding: 3px;
-  border-radius: 4px;
-  border: 1px solid #aaa;
+    width: 60px;
+    font-size: 14px;
+    text-align: center;
+    padding: 3px;
+    border-radius: 4px;
+    border: 1px solid #aaa;
 }
 
 .edit-icon {
-  background: none;
-  border: none;
-  font-size: 24px;
-  cursor: pointer;
-  margin-left: auto;
-  align-self: flex-start;
-  color: #555;
-  transition: color 0.2s ease;
+    background: none;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    margin-left: auto;
+    align-self: flex-start;
+    color: #555;
+    transition: color 0.2s ease;
 }
 
 .edit-icon:hover {
-  color: #000;
+    color: #000;
 }
 
 .inline-group {
-  font-size: 18px;
-  font-weight: bold;
-  margin-bottom: 8px;
+    font-size: 18px;
+    font-weight: bold;
+    margin-bottom: 8px;
 }
 
 .stat input[type="number"],
 .stat input[type="text"] {
-  width: 100%;
-  font-size: 14px;
-  padding: 4px 6px;
-  margin-bottom: 6px;
-  border-radius: 4px;
-  border: 1px solid #aaa;
-  box-sizing: border-box;
+    width: 100%;
+    font-size: 14px;
+    padding: 4px 6px;
+    margin-bottom: 6px;
+    border-radius: 4px;
+    border: 1px solid #aaa;
+    box-sizing: border-box;
 }
 
 .stat button {
-  font-size: 14px;
-  padding: 5px 10px;
-  margin-top: 4px;
-  margin-right: 4px;
-  background-color: #4a90e2;
-  color: white;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  transition: background-color 0.3s ease;
+    font-size: 14px;
+    padding: 5px 10px;
+    margin-top: 4px;
+    margin-right: 4px;
+    background-color: #4a90e2;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
 }
 
 .stat button:hover {
-  background-color: #357ab8;
+    background-color: #357ab8;
 }
 
 .button-group {
-  display: flex;
-  gap: 8px;
-  flex-wrap: nowrap;
-  /* optional: prevent stacking */
-  margin-top: 4px;
+    display: flex;
+    gap: 8px;
+    flex-wrap: nowrap;
+    /* optional: prevent stacking */
+    margin-top: 4px;
 }
 
 table {
-  width: 100%;
-  border-collapse: collapse;
-  background: #fff;
+    width: 100%;
+    border-collapse: collapse;
+    background: #fff;
 }
 
 th,
 td {
-  border: 1px solid #ccc;
-  padding: 10px;
-  text-align: left;
+    border: 1px solid #ccc;
+    padding: 10px;
+    text-align: left;
 }
 
 .modal {
-  display: none;
-  position: fixed;
-  z-index: 100;
-  padding-top: 80px;
-  left: 0;
-  top: 0;
-  width: 100%;
-  height: 100%;
-  overflow: auto;
-  background-color: rgba(0, 0, 0, 0.5);
+    display: none;
+    position: fixed;
+    z-index: 100;
+    padding-top: 80px;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(0, 0, 0, 0.5);
 }
 
 .modal-content {
-  background-color: #fefefe;
-  margin: auto;
-  padding: 20px;
-  width: 400px;
-  border-radius: 8px;
-  border: 1px solid #888;
+    background-color: #fff;
+    margin: auto;
+    padding: 24px;
+    width: 100%;
+    max-width: 450px;
+    border-radius: 10px;
+    border: 1px solid #ccc;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+    font-family: 'Segoe UI', sans-serif;
+}
+
+.modal-content h3 {
+    margin-top: 0;
+    font-size: 1.5em;
+    border-bottom: 1px solid #ddd;
+    padding-bottom: 8px;
+}
+
+.modal-content label {
+    display: block;
+    font-weight: 500;
+}
+
+.modal-content input,
+.modal-content select {
+    width: 100%;
+    padding: 6px 10px;
+    margin-top: 4px;
+    box-sizing: border-box;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    font-size: 14px;
 }
 
 .modal-footer {
-  margin-top: 12px;
-  text-align: right;
+    margin-top: 20px;
+    text-align: right;
 }
 
 .modal-footer button {
-  margin-left: 8px;
-  padding: 6px 12px;
-  border: none;
-  background-color: #444;
-  color: white;
-  border-radius: 5px;
-  cursor: pointer;
+    margin-left: 10px;
+    padding: 8px 16px;
+    border: none;
+    background-color: #5c5cfa;
+    color: white;
+    border-radius: 6px;
+    font-size: 14px;
+    transition: background-color 0.2s ease;
 }
 
 .modal-footer button:hover {
-  background-color: #222;
+    background-color: #3a3ae0;
 }
 
 #attunementContainer {
-  display: none;
+    display: none;
 }
 
 #characterImage {
-  display: block;
-  max-width: 800px;
-  margin: 10px 0;
+    display: block;
+    max-width: 800px;
+    margin: 10px 0;
 }
 
 .delete-button {
-  background-color: #e74c3c;
-  color: white;
-  border: none;
-  padding: 5px 10px;
-  cursor: pointer;
+    background-color: #e74c3c;
+    color: white;
+    border: none;
+    padding: 5px 10px;
+    cursor: pointer;
 }
 
 .inventory-container {
-  margin-top: 30px;
-  padding: 15px;
-  border: 1px solid #ccc;
-  border-radius: 12px;
-  max-width: 600px;
+    margin-top: 30px;
+    padding: 15px;
+    border: 1px solid #ccc;
+    border-radius: 12px;
+    max-width: 600px;
 }
 
 .currency-display {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 15px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 15px;
 }
 
 .inventory-table {
-  width: 100%;
-  border-collapse: collapse;
-  margin-bottom: 10px;
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 10px;
 }
 
 .inventory-table th,
 .inventory-table td {
-  border: 1px solid #aaa;
-  padding: 8px;
-  text-align: left;
+    border: 1px solid #aaa;
+    padding: 8px;
+    text-align: left;
 }
 
 .inventory-table td input {
-  width: 90%;
-  padding: 4px;
+    width: 90%;
+    padding: 4px;
 }
 
 .inventory-table button {
-  padding: 4px 10px;
-  border: none;
-  background-color: #c44;
-  color: white;
-  border-radius: 4px;
-  cursor: pointer;
+    padding: 4px 10px;
+    border: none;
+    background-color: #c44;
+    color: white;
+    border-radius: 4px;
+    cursor: pointer;
 }
 
 .inventory-table button:hover {
-  background-color: #a33;
+    background-color: #a33;
 }
 
 .inventory-container>button {
-  padding: 8px 12px;
-  border: none;
-  background-color: #2c7;
-  color: white;
-  border-radius: 6px;
-  cursor: pointer;
+    padding: 8px 12px;
+    border: none;
+    background-color: #2c7;
+    color: white;
+    border-radius: 6px;
+    cursor: pointer;
 }
 
 .inventory-container>button:hover {
-  background-color: #28a745;
+    background-color: #28a745;
 }
 
 .spells-container {
-  margin-top: 30px;
-  padding: 15px;
-  border: 1px solid #ccc;
-  border-radius: 12px;
-  max-width: 100%;
+    margin-top: 30px;
+    padding: 15px;
+    border: 1px solid #ccc;
+    border-radius: 12px;
+    max-width: 100%;
 }
 
 .spells-container>h2 {
-  margin-top: 0;
+    margin-top: 0;
 }
 
 .spells-container>button {
-  margin-bottom: 10px;
-  padding: 8px 12px;
-  border: none;
-  background-color: #2c7;
-  color: white;
-  border-radius: 6px;
-  cursor: pointer;
+    margin-bottom: 10px;
+    padding: 8px 12px;
+    border: none;
+    background-color: #2c7;
+    color: white;
+    border-radius: 6px;
+    cursor: pointer;
 }
 
 .spells-container>button:hover {
-  background-color: #28a745;
+    background-color: #28a745;
 }
 
 .spells-table {
-  width: 100%;
-  border-collapse: collapse;
+    width: 100%;
+    border-collapse: collapse;
 }
 
 .spells-table th,
 .spells-table td {
-  border: 1px solid #aaa;
-  padding: 8px;
-  text-align: left;
+    border: 1px solid #aaa;
+    padding: 8px;
+    text-align: left;
 }
 
 .spells-table button {
-  padding: 4px 10px;
-  border: none;
-  background-color: #c44;
-  color: white;
-  border-radius: 4px;
-  cursor: pointer;
+    padding: 4px 10px;
+    border: none;
+    background-color: #c44;
+    color: white;
+    border-radius: 4px;
+    cursor: pointer;
 }
 
 .spells-table button:hover {
-  background-color: #a33;
+    background-color: #a33;
 }
 
 .cast-button {
-  padding: 6px 12px;
-  border: none;
-  background-color: #28a745 !important;
-  /* green for active */
-  color: white;
-  border-radius: 6px;
-  cursor: pointer;
-  transition: background-color 0.2s ease;
+    padding: 6px 12px;
+    border: none;
+    background-color: #28a745 !important;
+    /* green for active */
+    color: white;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
 }
 
 .cast-button:hover {
-  background-color: #218838 !important;
+    background-color: #218838 !important;
 }
 
 .cast-button:disabled {
-  background-color: #999 !important;
-  cursor: not-allowed;
-  opacity: 0.7;
+    background-color: #999 !important;
+    cursor: not-allowed;
+    opacity: 0.7;
 }
 
 .powers-container {
-  margin-top: 30px;
-  padding: 15px;
-  border: 1px solid #ccc;
-  border-radius: 12px;
+    margin-top: 30px;
+    padding: 15px;
+    border: 1px solid #ccc;
+    border-radius: 12px;
 }
 
 .powers-container>h2 {
-  margin-top: 0;
+    margin-top: 0;
 }
 
 .powers-container>button {
-  margin-bottom: 10px;
-  padding: 8px 12px;
-  border: none;
-  background-color: #2c7;
-  color: white;
-  border-radius: 6px;
-  cursor: pointer;
+    margin-bottom: 10px;
+    padding: 8px 12px;
+    border: none;
+    background-color: #2c7;
+    color: white;
+    border-radius: 6px;
+    cursor: pointer;
 }
 
 .powers-container>button:hover {
-  background-color: #28a745;
+    background-color: #28a745;
 }
 
 .powers-table {
-  width: 100%;
-  border-collapse: collapse;
+    width: 100%;
+    border-collapse: collapse;
 }
 
 .powers-table th,
 .powers-table td {
-  border: 1px solid #aaa;
-  padding: 8px;
-  text-align: left;
+    border: 1px solid #aaa;
+    padding: 8px;
+    text-align: left;
 }
 
 .powers-table button {
-  padding: 4px 10px;
-  border: none;
-  background-color: #c44;
-  color: white;
-  border-radius: 4px;
-  cursor: pointer;
+    padding: 4px 10px;
+    border: none;
+    background-color: #c44;
+    color: white;
+    border-radius: 4px;
+    cursor: pointer;
 }
 
 .powers-table button:hover {
-  background-color: #a33;
+    background-color: #a33;
 }
 
 .tab-container {
-  margin-top: 20px;
+    margin-top: 20px;
 }
 
 .tab-buttons {
-  display: flex;
-  border-bottom: 2px solid #ccc;
-  margin-bottom: 10px;
+    display: flex;
+    border-bottom: 2px solid #ccc;
+    margin-bottom: 10px;
 }
 
 .tab-button {
-  background: none;
-  border: none;
-  padding: 10px 20px;
-  font-weight: bold;
-  cursor: pointer;
-  border-bottom: 2px solid transparent;
-  transition: 0.2s;
+    background: none;
+    border: none;
+    padding: 10px 20px;
+    font-weight: bold;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: 0.2s;
 }
 
 .tab-button:hover {
-  background-color: #f0f0f0;
+    background-color: #f0f0f0;
 }
 
 .tab-button.active {
-  border-bottom: 2px solid #444;
-  color: #444;
+    border-bottom: 2px solid #444;
+    color: #444;
 }
 
 .tab-content {
-  display: none;
+    display: none;
 }
 
 .tab-content.active-tab {
-  display: block;
+    display: block;
 }
