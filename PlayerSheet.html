@@ -240,6 +240,28 @@
         </table>
 
         <button onclick="addInventoryItem()">Add Item</button>
+        <button onclick="openPotionModal()">Manage Potions</button>
+      </div>
+      <!-- Potion Management -->
+
+      <div id="potionModal" class="modal">
+        <div class="modal-content">
+          <h3>Potion Inventory</h3>
+          <table class="potion-table">
+            <thead>
+              <tr>
+                <th>Type</th>
+                <th>Restore Amount</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="potionTableBody"></tbody>
+          </table>
+          <button onclick="addPotion()">Add Potion</button>
+          <div class="modal-footer">
+            <button onclick="closePotionModal()">Close</button>
+          </div>
+        </div>
       </div>
     </div>
 
