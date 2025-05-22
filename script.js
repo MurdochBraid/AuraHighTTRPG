@@ -411,7 +411,7 @@ function addInventoryItem() {
     tbody.appendChild(tr);
 }
 
-const powers = []; // stores all powers
+let powers = []; // stores all powers
 
 function addPower(name, description, maxUses) {
     const power = {
@@ -499,9 +499,25 @@ function saveToFile() {
         maxMana: document.getElementById('maxMana').innerText,
         cunningActions: document.getElementById('cunningActions').innerText,
         spells: [],
-        characterImage: document.getElementById('characterImage').src || null
+        powers: powers,
+        characterImage: document.getElementById('characterImage').src || null,
+        inventory: [],
+        currency: document.getElementById('currency').value || "0"
     };
 
+    // Skill Modifiers
+    characterData.skills = {};
+    document.querySelectorAll('#skillsDisplay .stat-main').forEach(mainDiv => {
+        const id = mainDiv.id;
+        const modInput = document.getElementById(`${id}-mod`);
+        const mod = modInput ? parseInt(modInput.value) || 0 : 0;
+
+        characterData.skills[id] = {
+            mod
+        };
+    });
+
+    // Spells
     const spellRows = document.querySelectorAll('#spellTableBody tr');
     spellRows.forEach(row => {
         const cells = row.querySelectorAll('td');
@@ -511,8 +527,19 @@ function saveToFile() {
             cost: cells[2].innerText,
             castTimeDuration: cells[3].innerText,
             range: cells[4].innerText,
-            damage: cells[3].innerText
+            damage: cells[5].innerText
         });
+    });
+
+    // Inventory
+    const inventoryRows = document.querySelectorAll('#inventoryBody tr');
+    inventoryRows.forEach(row => {
+        const input = row.querySelector('input[type="text"]');
+        if (input && input.value.trim() !== "") {
+            characterData.inventory.push({
+                description: input.value.trim()
+            });
+        }
     });
 
     const blob = new Blob([JSON.stringify(characterData, null, 2)], {
@@ -553,12 +580,12 @@ function loadCharacterData(data) {
     document.getElementById('classDescription').innerText = data.description || '';
     document.getElementById('characterDesc').innerText = `${data.class} - ${data.description}`;
 
-    setStatValue('intelligence', data.stats.intelligence);
-    setStatValue('power', data.stats.power);
-    setStatValue('fortitude', data.stats.fortitude);
-    setStatValue('speed', data.stats.speed);
-    setStatValue('magic', data.stats.magic);
-    setStatValue('attunement', data.stats.attunement);
+    setStatValue('intelligence', +data.stats.intelligence);
+    setStatValue('power', +data.stats.power);
+    setStatValue('fortitude', +data.stats.fortitude);
+    setStatValue('speed', +data.stats.speed);
+    setStatValue('magic', +data.stats.magic);
+    setStatValue('attunement', +data.stats.attunement);
 
     updateDerivedStats();
 
@@ -582,12 +609,55 @@ function loadCharacterData(data) {
         spellTable.appendChild(row);
     });
 
+    powers = data.powers;
+
     if (data.characterImage) {
         const image = document.getElementById('characterImage');
         image.src = data.characterImage;
         image.style.display = 'block';
     }
 
+    // Currency
+    document.getElementById('currency').value = +data.currency || 0;
+
+    // Inventory
+    // Inventory
+    const inventoryBody = document.getElementById('inventoryBody');
+    inventoryBody.innerHTML = '';
+    (data.inventory || []).forEach(item => {
+        const tr = document.createElement('tr');
+
+        const descTd = document.createElement('td');
+        const input = document.createElement('input');
+        input.type = "text";
+        input.value = item.description || '';
+        input.placeholder = "Item description";
+        descTd.appendChild(input);
+
+        const actionTd = document.createElement('td');
+        const delBtn = document.createElement('button');
+        delBtn.textContent = "Delete";
+        delBtn.onclick = () => tr.remove();
+        actionTd.appendChild(delBtn);
+
+        tr.appendChild(descTd);
+        tr.appendChild(actionTd);
+        inventoryBody.appendChild(tr);
+    });
+
+    // Skill Modifiers
+    if (data.skills) {
+        Object.entries(data.skills).forEach(([id, values]) => {
+            const modInput = document.getElementById(`${id}-mod`);
+
+            if (modInput) {
+                modInput.value = values.mod ?? 0;
+                updateSkill(modInput);
+            }
+        })
+    }
+
+    renderPowers();
     updateSpellButtons();
 }
 
@@ -606,7 +676,7 @@ function showTab(containerId) {
     document.getElementById(containerId).classList.add('active-tab');
 
     // Highlight the correct button
-    const tabIndex = ['spellsContainer', 'inventoryContainer', 'powersContainer'].indexOf(containerId);
+    const tabIndex = ['spellsContainer', 'powersContainer', 'inventoryContainer'].indexOf(containerId);
     if (tabIndex !== -1) {
         document.querySelectorAll('.tab-button')[tabIndex].classList.add('active');
     }
