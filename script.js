@@ -242,6 +242,12 @@ function longRest() {
 
     resetModifiers();
     updateDerivedStats();
+
+    // Reset powers
+    powers.forEach(power => {
+        power.remainingUses = power.maxUses;
+    });
+    renderPowers();
 }
 
 function handleImageUpload() {
@@ -364,6 +370,74 @@ function addInventoryItem() {
     tr.appendChild(actionTd);
     tbody.appendChild(tr);
 }
+
+const powers = []; // stores all powers
+
+function addPower(name, description, maxUses) {
+    const power = {
+        name,
+        description,
+        maxUses,
+        remainingUses: maxUses
+    };
+    powers.push(power);
+    renderPowers();
+}
+
+function renderPowers() {
+    const tbody = document.getElementById('powersTableBody');
+    tbody.innerHTML = ''; // Clear
+
+    powers.forEach((power, index) => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+      <td>${power.name}</td>
+      <td>${power.description}</td>
+      <td>${power.remainingUses} / ${power.maxUses}</td>
+      <td>
+        <button onclick="usePower(${index})" ${power.remainingUses <= 0 ? 'disabled' : ''}>Use</button>
+        <button onclick="deletePower(${index})">Delete</button>
+      </td>
+    `;
+        tbody.appendChild(row);
+    });
+}
+
+function usePower(index) {
+    if (powers[index].remainingUses > 0) {
+        powers[index].remainingUses--;
+        renderPowers();
+    }
+}
+
+function deletePower(index) {
+    powers.splice(index, 1);
+    renderPowers();
+}
+
+function openPowerModal() {
+    document.getElementById('powerForm').reset();
+    document.getElementById('powerModal').style.display = 'block';
+}
+
+function closePowerModal() {
+    document.getElementById('powerModal').style.display = 'none';
+}
+
+function savePower() {
+    const name = document.getElementById('powerName').value.trim();
+    const description = document.getElementById('powerDescription').value.trim();
+    const uses = parseInt(document.getElementById('powerUses').value, 10);
+
+    if (!name || !description || isNaN(uses) || uses < 1) {
+        alert('Please fill out all fields correctly.');
+        return;
+    }
+
+    addPower(name, description, uses);
+    closePowerModal();
+}
+
 
 
 function saveToFile() {

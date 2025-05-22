@@ -185,6 +185,25 @@
     </table>
   </div>
 
+  <div class="powers-container">
+    <h2>Powers</h2>
+    <button onclick="openPowerModal()">Add Power</button>
+
+    <table class="powers-table">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Description</th>
+          <th>Uses</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody id="powersTableBody">
+        <!-- Powers will be added here -->
+      </tbody>
+    </table>
+  </div>
+
   <div class="inventory-container">
     <h2>Inventory</h2>
 
@@ -252,6 +271,21 @@
         <div class="modal-footer">
           <button type="button" onclick="saveSpell()">Save</button>
           <button type="button" onclick="closeSpellModal()">Cancel</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div id="powerModal" class="modal">
+    <div class="modal-content">
+      <h3>Add Power</h3>
+      <form id="powerForm">
+        <label>Name: <input type="text" id="powerName" required></label><br />
+        <label>Description: <input type="text" id="powerDescription" required></label><br />
+        <label>Uses: <input type="number" id="powerUses" min="1" required></label><br />
+        <div class="modal-footer">
+          <button type="button" onclick="savePower()">Save</button>
+          <button type="button" onclick="closePowerModal()">Cancel</button>
         </div>
       </form>
     </div>
