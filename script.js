@@ -235,7 +235,7 @@ function refreshSkills() {
     setStatValue('beast_handling', Math.floor(power / 10) - 4 - penalty);
     setStatValue('constitution', Math.floor(fortitude / 10) - 4 - penalty);
     setStatValue('diplomacy', Math.floor(intelligence / 10) + aura - 4 - penalty);
-    setStatValue('resolve', Math.floor(intelligence / 10) + Math.floor(fortitude / 10) - 4 - penalty);
+    setStatValue('resolve', Math.floor(intelligence / 10) + Math.floor(fortitude / 10) - 4 - (penalty * 2));
     setStatValue('stealth', Math.floor(speed / 10) - 4 - penalty);
 
     setStatValue('dodge', Math.min(20, 20 - Math.floor(speed / 10) + 4 + penalty));
