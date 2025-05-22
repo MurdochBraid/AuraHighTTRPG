@@ -31,14 +31,20 @@
 
     <div class="stat">
       <label>HP</label>
-      <div class="inline-group"><span id="currentHP">0</span>/<span id="maxHP">0</span></div>
+      <div class="inline-group">
+        <span id="currentHP">0</span>/<span id="maxHP">0</span>
+        <span id="tempHPContainer" style="margin-left: 10px; display: none;">(+<span id="tempHP">0</span>)</span>
+      </div>
       <input type="number" id="damageTaken" placeholder="Damage" />
       <button onclick="takeDamage()">Take Damage</button>
     </div>
 
     <div class="stat">
       <label>Mana</label>
-      <div class="inline-group"><span id="currentMana">0</span>/<span id="maxMana">0</span></div>
+      <div class="inline-group">
+        <span id="currentMana">0</span>/<span id="maxMana">0</span>
+        <span id="tempManaContainer" style="margin-left: 10px; display: none;">(+<span id="tempMana">0</span>)</span>
+      </div>
     </div>
 
     <div class="stat">

@@ -47,8 +47,28 @@ function updateStat(input) {
 
     // I need to update skills, max/ current HP, and max/current mana
     refreshSkills();
-    //updateMaxHP();
-    //updateMaxMana();
+    updateTempHP();
+    updateTempMana();
+}
+
+function updateTempHP() {
+    const fortMod = parseInt(document.getElementById('fortitude-mod').value) || 0;
+
+    const tempHP = fortMod > 0 ? fortMod * 5 : 0;
+    document.getElementById('tempHP').innerText = tempHP;
+    const tempHPContainer = document.getElementById('tempHPContainer');
+    tempHPContainer.style.display = tempHP > 0 ? 'inline' : 'none';
+}
+
+function updateTempMana() {
+    const magicMod = parseInt(document.getElementById('magic-mod').value) || 0;
+
+    const tempMana = magicMod > 0 ? magicMod * 10 : 0;
+    document.getElementById('tempMana').innerText = tempMana;
+    const tempManaContainer = document.getElementById('tempManaContainer');
+    tempManaContainer.style.display = tempMana > 0 ? 'inline' : 'none';
+
+    updateSpellButtons();
 }
 
 function updateSkill(input) {
@@ -164,9 +184,9 @@ function saveStats() {
 }
 
 function updateDerivedStats() {
-    const fortitude = parseInt(document.getElementById('fortitude').innerText) || 0;
-    const magic = parseInt(document.getElementById('magic').innerText) || 0;
-    const speed = parseInt(document.getElementById('speed').innerText) || 0;
+    const fortitude = parseInt(document.getElementById('fortitude').dataset.base) || 0;
+    const magic = parseInt(document.getElementById('magic').dataset.base) || 0;
+    const speed = parseInt(document.getElementById('speed').dataset.base) || 0;
 
     const maxHP = fortitude * 5;
     const maxMana = magic * 10;
@@ -209,7 +229,7 @@ function refreshSkills() {
 
 
 function updateSpellButtons() {
-    const currentMana = parseInt(document.getElementById('currentMana').innerText);
+    const currentMana = parseInt(document.getElementById('currentMana').innerText) + document.getElementById('tempMana').innerText;
     const spellRows = document.querySelectorAll('#spellTableBody tr');
     spellRows.forEach(row => {
         const cost = parseInt(row.cells[2].innerText);
@@ -221,11 +241,56 @@ function updateSpellButtons() {
 }
 
 function takeDamage() {
-    let dmg = parseInt(document.getElementById('damageTaken').value) || 0;
-    let current = parseInt(document.getElementById('currentHP').innerText);
-    document.getElementById('currentHP').innerText = Math.max(0, current - dmg);
-    // Clear the input
-    document.getElementById('damageTaken').value = 0;
+    let damage = parseInt(document.getElementById('damageTaken').value);
+    if (isNaN(damage) || damage <= 0) return;
+
+    let currentHP = parseInt(document.getElementById('currentHP').innerText);
+    let tempHP = parseInt(document.getElementById('tempHP').innerText);
+
+    if (tempHP > 0) {
+        if (damage <= tempHP) {
+            tempHP -= damage;
+            damage = 0;
+        } else {
+            damage -= tempHP;
+            tempHP = 0;
+        }
+        document.getElementById('tempHP').innerText = tempHP;
+        if (tempHP === 0) {
+            document.getElementById('tempHPContainer').style.display = 'none';
+        }
+    }
+
+    currentHP = Math.max(currentHP - damage, 0);
+    document.getElementById('currentHP').innerText = currentHP;
+    document.getElementById('damageTaken').value = '';
+}
+
+function useMana(cost) {
+
+    if (isNaN(cost) || cost <= 0) return;
+
+    let currentMana = parseInt(document.getElementById('currentMana').innerText);
+    let tempMana = parseInt(document.getElementById('tempMana').innerText);
+
+    if (tempMana > 0) {
+        if (cost <= tempMana) {
+            tempMana -= cost;
+            cost = 0;
+        } else {
+            cost -= tempMana;
+            tempMana = 0;
+        }
+        document.getElementById('tempMana').innerText = tempMana;
+        if (tempMana === 0) {
+            document.getElementById('tempManaContainer').style.display = 'none';
+        }
+    }
+
+    currentMana = Math.max(currentMana - cost, 0);
+    document.getElementById('currentMana').innerText = currentMana;
+
+    updateSpellButtons();
 }
 
 function useCunningAction() {
@@ -378,10 +443,7 @@ function castSpell(button) {
     const cells = row.getElementsByTagName('td');
 
     let cost = cells[2].innerText;
-    let currMana = document.getElementById('currentMana').innerHTML;
-
-    document.getElementById('currentMana').innerHTML = currMana - cost;
-    updateSpellButtons();
+    useMana(cost)
 }
 
 function deleteSpell(button) {
