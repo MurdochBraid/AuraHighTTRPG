@@ -60,8 +60,8 @@ function saveNote() {
         markers[key].unbindPopup().bindPopup(`${text}`);
     } else {
         const marker = L.marker(currentLatLng, {
-                icon: icons[category]
-            }).addTo(map)
+            icon: icons[category]
+        }).addTo(map)
             .bindPopup(`${text}`);
         markers[key] = marker;
     }
@@ -109,8 +109,8 @@ document.getElementById('importNotes').addEventListener('change', function () {
 
                 if (!markers[key]) {
                     markers[key] = L.marker(latlng, {
-                            icon
-                        }).addTo(map)
+                        icon
+                    }).addTo(map)
                         .bindPopup(`${text}`);
                 } else {
                     markers[key].setIcon(icon).unbindPopup().bindPopup(`${text}`);
