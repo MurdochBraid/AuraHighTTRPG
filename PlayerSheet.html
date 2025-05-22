@@ -281,7 +281,7 @@
       <h3>Edit Spell</h3>
       <form id="spellForm">
         <label>Name: <input type="text" id="spellName"></label><br />
-        <label>Effect: <input type="text" id="spellEffect"></label><br />
+        <label>Effect: <textarea id="spellEffect" rows="3"></textarea></label><br />
         <label>Cost: <input type="number" id="spellCost"></label><br />
         <label>Cast Time / Duration: <input type="text" id="spellCastTimeDuration"></label><br />
         <label>Range: <input type="text" id="spellRange"></label><br />
@@ -299,7 +299,7 @@
       <h3>Add Power</h3>
       <form id="powerForm">
         <label>Name: <input type="text" id="powerName" required></label><br />
-        <label>Description: <input type="text" id="powerDescription" required></label><br />
+        <label>Description: <textarea id="powerDescription" rows="3"></textarea></label><br />
         <label>Uses: <input type="number" id="powerUses" min="1" required></label><br />
         <div class="modal-footer">
           <button type="button" onclick="savePower()">Save</button>
