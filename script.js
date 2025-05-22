@@ -550,3 +550,24 @@ function loadCharacterData(data) {
 
     updateSpellButtons();
 }
+
+function showTab(containerId) {
+    // Hide all content blocks
+    document.querySelectorAll('.tab-content').forEach(el => {
+        el.classList.remove('active-tab');
+    });
+
+    // Remove active class from all buttons
+    document.querySelectorAll('.tab-button').forEach(btn => {
+        btn.classList.remove('active');
+    });
+
+    // Show selected content
+    document.getElementById(containerId).classList.add('active-tab');
+
+    // Highlight the correct button
+    const tabIndex = ['spellsContainer', 'inventoryContainer', 'powersContainer'].indexOf(containerId);
+    if (tabIndex !== -1) {
+        document.querySelectorAll('.tab-button')[tabIndex].classList.add('active');
+    }
+}
