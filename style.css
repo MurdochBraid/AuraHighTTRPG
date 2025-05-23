@@ -1,7 +1,8 @@
 body {
     font-family: Arial, sans-serif;
     padding: 20px;
-    background: #f4f4f4;
+    background: #1e1e1e;
+    color: #f0f0f0;
 }
 
 .stats-form {
@@ -19,9 +20,9 @@ body {
     width: 125px;
     height: 120px;
     padding: 10px;
-    border: 1px solid #ccc;
+    border: 1px solid #555;
     border-radius: 8px;
-    background-color: #f9f9f9;
+    background-color: #2a2a2a;
 }
 
 .stat label {
@@ -42,7 +43,7 @@ body {
     text-align: center;
     padding: 3px;
     border-radius: 4px;
-    border: 1px solid #aaa;
+    border: 1px solid #555;
 }
 
 .edit-icon {
@@ -52,12 +53,12 @@ body {
     cursor: pointer;
     margin-left: auto;
     align-self: flex-start;
-    color: #555;
+    color: #ccc;
     transition: color 0.2s ease;
 }
 
 .edit-icon:hover {
-    color: #000;
+    color: #f0f0f0;
 }
 
 .inline-group {
@@ -73,7 +74,7 @@ body {
     padding: 4px 6px;
     margin-bottom: 6px;
     border-radius: 4px;
-    border: 1px solid #aaa;
+    border: 1px solid #555;
     box-sizing: border-box;
 }
 
@@ -105,12 +106,12 @@ body {
 table {
     width: 100%;
     border-collapse: collapse;
-    background: #fff;
+    background-color: #2a2a2a;
 }
 
 th,
 td {
-    border: 1px solid #ccc;
+    border: 1px solid #555;
     padding: 10px;
     text-align: left;
 }
@@ -129,13 +130,13 @@ td {
 }
 
 .modal-content {
-    background-color: #fff;
+    background-color: #2a2a2a;
     margin: auto;
     padding: 24px;
     width: 100%;
     max-width: 450px;
     border-radius: 10px;
-    border: 1px solid #ccc;
+    border: 1px solid #555;
     box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
     font-family: 'Segoe UI', sans-serif;
 }
@@ -143,7 +144,7 @@ td {
 .modal-content h3 {
     margin-top: 0;
     font-size: 1.5em;
-    border-bottom: 1px solid #ddd;
+    border-bottom: 1px solid #555;
     padding-bottom: 8px;
 }
 
@@ -159,7 +160,7 @@ td {
     padding: 6px 10px;
     margin-top: 4px;
     box-sizing: border-box;
-    border: 1px solid #ccc;
+    border: 1px solid #555;
     border-radius: 6px;
     font-size: 14px;
 }
@@ -205,7 +206,7 @@ td {
 .inventory-container {
     margin-top: 30px;
     padding: 15px;
-    border: 1px solid #ccc;
+    border: 1px solid #555;
     border-radius: 12px;
     max-width: 600px;
 }
@@ -225,7 +226,7 @@ td {
 
 .inventory-table th,
 .inventory-table td {
-    border: 1px solid #aaa;
+    border: 1px solid #555;
     padding: 8px;
     text-align: left;
 }
@@ -264,7 +265,7 @@ td {
 .spells-container {
     margin-top: 30px;
     padding: 15px;
-    border: 1px solid #ccc;
+    border: 1px solid #555;
     border-radius: 12px;
     max-width: 100%;
 }
@@ -294,7 +295,7 @@ td {
 
 .spells-table th,
 .spells-table td {
-    border: 1px solid #aaa;
+    border: 1px solid #555;
     padding: 8px;
     text-align: left;
 }
@@ -336,7 +337,7 @@ td {
 .powers-container {
     margin-top: 30px;
     padding: 15px;
-    border: 1px solid #ccc;
+    border: 1px solid #555;
     border-radius: 12px;
 }
 
@@ -365,7 +366,7 @@ td {
 
 .powers-table th,
 .powers-table td {
-    border: 1px solid #aaa;
+    border: 1px solid #555;
     padding: 8px;
     text-align: left;
 }
@@ -389,7 +390,7 @@ td {
 
 .tab-buttons {
     display: flex;
-    border-bottom: 2px solid #ccc;
+    border-bottom: 2px solid #444;
     margin-bottom: 10px;
 }
 
@@ -409,7 +410,7 @@ td {
 
 .tab-button.active {
     border-bottom: 2px solid #444;
-    color: #444;
+    color: #ccc;
 }
 
 .tab-content {
@@ -422,11 +423,11 @@ td {
 
 .potion-table input,
 .potion-table select {
-  width: 100px;
+    width: 100px;
 }
 
 .potion-table td {
-  padding: 4px;
+    padding: 4px;
 }
 
 #potionModal>.modal-content>button {
@@ -440,4 +441,65 @@ td {
 
 #potionModal>.modal-content>button:hover {
     background-color: #28a745;
+}
+
+input,
+select,
+textarea {
+    background-color: #1c1c1c;
+    /* dark background */
+    color: #f0f0f0;
+    /* light text */
+    border: 1px solid #555;
+    /* soft border for contrast */
+    font-family: 'Segoe UI', Arial, sans-serif;
+    /* consistent font */
+    font-size: 14px;
+    padding: 6px 10px;
+    border-radius: 6px;
+    box-sizing: border-box;
+    transition: background-color 0.2s, border-color 0.2s, color 0.2s;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+    outline: none;
+    border-color: #888;
+    background-color: #2a2a2a;
+}
+
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+/* Firefox */
+input[type="number"] {
+    -moz-appearance: textfield;
+}
+
+button {
+    background-color: #3a3a3a;
+    color: #e0e0e0;
+    border: 1px solid #555;
+    border-radius: 6px;
+    padding: 6px 12px;
+    font-family: 'Segoe UI', sans-serif;
+    font-size: 14px;
+    cursor: pointer;
+    transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+button:hover {
+    background-color: #4a4a4a;
+    border-color: #666;
+}
+
+button:disabled {
+    background-color: #555;
+    color: #aaa;
+    cursor: not-allowed;
+    opacity: 0.7;
 }
