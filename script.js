@@ -303,10 +303,10 @@ function updateBodyBackground() {
     const missingRatio = 1 - (currentHP / maxHP);
     const intensity = Math.pow(missingRatio, 2); // Sharper effect at low HP
 
-    // From light gray (#f4f4f4) → maroon (#800000)
-    const baseR = 244, baseG = 244, baseB = 244;
+    // From light gray (#1e1e1e) → maroon (#800000)
+    const baseR = 30, baseG = 30, baseB = 30;
     const targetR = 128, targetG = 0, targetB = 0;
-
+    
     const r = Math.floor(baseR + (targetR - baseR) * intensity);
     const g = Math.floor(baseG + (targetG - baseG) * intensity);
     const b = Math.floor(baseB + (targetB - baseB) * intensity);
