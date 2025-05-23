@@ -7,32 +7,53 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: '© OpenStreetMap contributors'
 }).addTo(map);
 
+const auraHigh = L.marker([35.50175, 139.61362]).addTo(map);
+auraHigh.bindPopup("Aura High")
+
 const markers = {}; // Track markers by latlng key
 
 const icons = {
     general: L.icon({
-        iconUrl: './assets/crystals.png',
-        iconSize: [24, 24],
-        iconAnchor: [12, 24],
-        popupAnchor: [0, -24]
+        iconUrl: './assets/magic-book.png',
+        iconSize: [48, 48],
+        iconAnchor: [24, 48],
+        popupAnchor: [0, -48]
     }),
     npc: L.icon({
         iconUrl: './assets/necromancer.png',
-        iconSize: [24, 24],
-        iconAnchor: [12, 24],
-        popupAnchor: [0, -24]
+        iconSize: [48, 48],
+        iconAnchor: [24, 48],
+        popupAnchor: [0, -48]
     }),
     quest: L.icon({
         iconUrl: './assets/cards.png',
-        iconSize: [24, 24],
-        iconAnchor: [12, 24],
-        popupAnchor: [0, -24]
+        iconSize: [48, 48],
+        iconAnchor: [24, 48],
+        popupAnchor: [0, -48]
     }),
-    danger: L.icon({
+    ritual: L.icon({
+        iconUrl: './assets/pentagram.png',
+        iconSize: [48, 48],
+        iconAnchor: [24, 48],
+        popupAnchor: [0, -48]
+    }),
+    node: L.icon({
+        iconUrl: './assets/crystals.png',
+        iconSize: [48, 48],
+        iconAnchor: [24, 48],
+        popupAnchor: [0, -48]
+    }),
+    store: L.icon({
+        iconUrl: './assets/philosophers-stone.png',
+        iconSize: [48, 48],
+        iconAnchor: [24, 48],
+        popupAnchor: [0, -48]
+    }),
+    rune: L.icon({
         iconUrl: './assets/runes.png',
-        iconSize: [24, 24],
-        iconAnchor: [12, 24],
-        popupAnchor: [0, -24]
+        iconSize: [48, 48],
+        iconAnchor: [24, 48],
+        popupAnchor: [0, -48]
     })
 };
 
