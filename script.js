@@ -401,19 +401,19 @@ function restoreHP(amount) {
     const max = parseInt(document.getElementById('maxHP').innerText);
     let newHP = parseInt(current.innerText) + amount;
     current.innerText = Math.min(newHP, max);
-    
+
     refreshSkills();
     updateBodyBackground();
-  }
-  
-  function restoreMana(amount) {
+}
+
+function restoreMana(amount) {
     const current = document.getElementById('currentMana');
     const max = parseInt(document.getElementById('maxMana').innerText);
     let newMana = parseInt(current.innerText) + amount;
     current.innerText = Math.min(newMana, max);
 
     updateSpellButtons();
-  }
+}
 
 function auraLoss() {
     document.getElementById('aura').innerText = +document.getElementById('aura').innerText - 1;
@@ -558,72 +558,72 @@ function addInventoryItem() {
 let potions = []; // Stores potions as objects
 
 function openPotionModal() {
-  document.getElementById('potionModal').style.display = 'block';
-  renderPotions();
+    document.getElementById('potionModal').style.display = 'block';
+    renderPotions();
 }
 
 function closePotionModal() {
-  document.getElementById('potionModal').style.display = 'none';
+    document.getElementById('potionModal').style.display = 'none';
 }
 
 function addPotion() {
-  potions.push({ type: 'HP', amount: 10 });
-  renderPotions();
+    potions.push({ type: 'HP', amount: 10 });
+    renderPotions();
 }
 
 function renderPotions() {
-  const tbody = document.getElementById('potionTableBody');
-  tbody.innerHTML = '';
-  potions.forEach((potion, index) => {
-    const row = document.createElement('tr');
+    const tbody = document.getElementById('potionTableBody');
+    tbody.innerHTML = '';
+    potions.forEach((potion, index) => {
+        const row = document.createElement('tr');
 
-    // Type
-    const typeCell = document.createElement('td');
-    const typeSelect = document.createElement('select');
-    ['HP', 'Mana'].forEach(optionVal => {
-      const option = document.createElement('option');
-      option.value = optionVal;
-      option.text = optionVal;
-      if (potion.type === optionVal) option.selected = true;
-      typeSelect.appendChild(option);
+        // Type
+        const typeCell = document.createElement('td');
+        const typeSelect = document.createElement('select');
+        ['HP', 'Mana'].forEach(optionVal => {
+            const option = document.createElement('option');
+            option.value = optionVal;
+            option.text = optionVal;
+            if (potion.type === optionVal) option.selected = true;
+            typeSelect.appendChild(option);
+        });
+        typeSelect.onchange = () => { potion.type = typeSelect.value; };
+        typeCell.appendChild(typeSelect);
+
+        // Amount
+        const amountCell = document.createElement('td');
+        const amountInput = document.createElement('input');
+        amountInput.type = 'number';
+        amountInput.value = potion.amount;
+        amountInput.onchange = () => { potion.amount = parseInt(amountInput.value) || 0; };
+        amountCell.appendChild(amountInput);
+
+        // Actions
+        const actionCell = document.createElement('td');
+        const consumeBtn = document.createElement('button');
+        consumeBtn.innerText = 'Consume';
+        consumeBtn.onclick = () => {
+            if (potion.type === 'HP') restoreHP(potion.amount);
+            else restoreMana(potion.amount);
+            potions.splice(index, 1);
+            renderPotions();
+        };
+
+        const deleteBtn = document.createElement('button');
+        deleteBtn.innerText = 'Delete';
+        deleteBtn.onclick = () => {
+            potions.splice(index, 1);
+            renderPotions();
+        };
+
+        actionCell.appendChild(consumeBtn);
+        actionCell.appendChild(deleteBtn);
+
+        row.appendChild(typeCell);
+        row.appendChild(amountCell);
+        row.appendChild(actionCell);
+        tbody.appendChild(row);
     });
-    typeSelect.onchange = () => { potion.type = typeSelect.value; };
-    typeCell.appendChild(typeSelect);
-
-    // Amount
-    const amountCell = document.createElement('td');
-    const amountInput = document.createElement('input');
-    amountInput.type = 'number';
-    amountInput.value = potion.amount;
-    amountInput.onchange = () => { potion.amount = parseInt(amountInput.value) || 0; };
-    amountCell.appendChild(amountInput);
-
-    // Actions
-    const actionCell = document.createElement('td');
-    const consumeBtn = document.createElement('button');
-    consumeBtn.innerText = 'Consume';
-    consumeBtn.onclick = () => {
-      if (potion.type === 'HP') restoreHP(potion.amount);
-      else restoreMana(potion.amount);
-      potions.splice(index, 1);
-      renderPotions();
-    };
-
-    const deleteBtn = document.createElement('button');
-    deleteBtn.innerText = 'Delete';
-    deleteBtn.onclick = () => {
-      potions.splice(index, 1);
-      renderPotions();
-    };
-
-    actionCell.appendChild(consumeBtn);
-    actionCell.appendChild(deleteBtn);
-
-    row.appendChild(typeCell);
-    row.appendChild(amountCell);
-    row.appendChild(actionCell);
-    tbody.appendChild(row);
-  });
 }
 
 let powers = []; // stores all powers

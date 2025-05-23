@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Interactive Map Notes</title>
+  <title>Aura High Spatial Notetaking</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
   <link rel="stylesheet" href="mapViewer.css">
@@ -13,7 +13,7 @@
 <body>
   <button id="exportNotes">Export Notes</button>
   <input type="file" id="importNotes" accept="application/json" />
-  <div id="map" style="width: 100%; height: 600px; margin-top: 20px;"></div>
+  <div id="map" style="width: 100%; margin-top: 20px;"></div>
 
   <script src="mapViewer.js"></script>
 
@@ -25,7 +25,10 @@
         <option value="general">General</option>
         <option value="npc">NPC</option>
         <option value="quest">Quest</option>
-        <option value="danger">Danger</option>
+        <option value="ritual">Ritual Site</option>
+        <option value="node">Arcane Node</option>
+        <option value="store">Store</option>
+        <option value="rune">Runes</option>
       </select>
       <textarea id="noteText" rows="5" style="width: 100%; margin-top: 8px;"></textarea>
       <div class="modal-footer">

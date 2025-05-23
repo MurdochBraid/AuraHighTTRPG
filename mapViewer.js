@@ -7,32 +7,53 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: '© OpenStreetMap contributors'
 }).addTo(map);
 
+const auraHigh = L.marker([35.50175, 139.61362]).addTo(map);
+auraHigh.bindPopup("Aura High")
+
 const markers = {}; // Track markers by latlng key
 
 const icons = {
     general: L.icon({
-        iconUrl: './assets/crystals.png',
-        iconSize: [24, 24],
-        iconAnchor: [12, 24],
-        popupAnchor: [0, -24]
+        iconUrl: './assets/magic-book.png',
+        iconSize: [48, 48],
+        iconAnchor: [24, 48],
+        popupAnchor: [0, -48]
     }),
     npc: L.icon({
         iconUrl: './assets/necromancer.png',
-        iconSize: [24, 24],
-        iconAnchor: [12, 24],
-        popupAnchor: [0, -24]
+        iconSize: [48, 48],
+        iconAnchor: [24, 48],
+        popupAnchor: [0, -48]
     }),
     quest: L.icon({
         iconUrl: './assets/cards.png',
-        iconSize: [24, 24],
-        iconAnchor: [12, 24],
-        popupAnchor: [0, -24]
+        iconSize: [48, 48],
+        iconAnchor: [24, 48],
+        popupAnchor: [0, -48]
     }),
-    danger: L.icon({
+    ritual: L.icon({
+        iconUrl: './assets/pentagram.png',
+        iconSize: [48, 48],
+        iconAnchor: [24, 48],
+        popupAnchor: [0, -48]
+    }),
+    node: L.icon({
+        iconUrl: './assets/crystals.png',
+        iconSize: [48, 48],
+        iconAnchor: [24, 48],
+        popupAnchor: [0, -48]
+    }),
+    store: L.icon({
+        iconUrl: './assets/philosophers-stone.png',
+        iconSize: [48, 48],
+        iconAnchor: [24, 48],
+        popupAnchor: [0, -48]
+    }),
+    rune: L.icon({
         iconUrl: './assets/runes.png',
-        iconSize: [24, 24],
-        iconAnchor: [12, 24],
-        popupAnchor: [0, -24]
+        iconSize: [48, 48],
+        iconAnchor: [24, 48],
+        popupAnchor: [0, -48]
     })
 };
 
@@ -60,8 +81,8 @@ function saveNote() {
         markers[key].unbindPopup().bindPopup(`${text}`);
     } else {
         const marker = L.marker(currentLatLng, {
-                icon: icons[category]
-            }).addTo(map)
+            icon: icons[category]
+        }).addTo(map)
             .bindPopup(`${text}`);
         markers[key] = marker;
     }
@@ -80,6 +101,23 @@ window.onclick = function (event) {
         closeNoteModal();
     }
 };
+
+function resizeMap() {
+    const offset = 80; // adjust this to leave room for headers, controls, etc.
+    const mapElement = document.getElementById('map');
+    mapElement.style.height = (window.innerHeight - offset) + 'px';
+
+    // If the map is already initialized:
+    if (typeof map !== 'undefined') {
+        map.invalidateSize();
+    }
+}
+
+// Initial resize
+resizeMap();
+
+// Resize on window resize
+window.addEventListener('resize', resizeMap);
 
 // Export notes
 document.getElementById('exportNotes').addEventListener('click', () => {
@@ -109,8 +147,8 @@ document.getElementById('importNotes').addEventListener('change', function () {
 
                 if (!markers[key]) {
                     markers[key] = L.marker(latlng, {
-                            icon
-                        }).addTo(map)
+                        icon
+                    }).addTo(map)
                         .bindPopup(`${text}`);
                 } else {
                     markers[key].setIcon(icon).unbindPopup().bindPopup(`${text}`);
