@@ -135,6 +135,8 @@ td {
     padding: 24px;
     width: 100%;
     max-width: 450px;
+    max-height: 80vh;
+    overflow-y: auto;
     border-radius: 10px;
     border: 1px solid #555;
     box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
