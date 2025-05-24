@@ -306,7 +306,7 @@ function updateBodyBackground() {
     // From light gray (#1e1e1e) → maroon (#800000)
     const baseR = 30, baseG = 30, baseB = 30;
     const targetR = 128, targetG = 0, targetB = 0;
-    
+
     const r = Math.floor(baseR + (targetR - baseR) * intensity);
     const g = Math.floor(baseG + (targetG - baseG) * intensity);
     const b = Math.floor(baseB + (targetB - baseB) * intensity);
@@ -591,20 +591,41 @@ function renderPotions() {
         typeCell.appendChild(typeSelect);
 
         // Amount
-        const amountCell = document.createElement('td');
-        const amountInput = document.createElement('input');
-        amountInput.type = 'number';
-        amountInput.value = potion.amount;
-        amountInput.onchange = () => { potion.amount = parseInt(amountInput.value) || 0; };
-        amountCell.appendChild(amountInput);
+        // Ingredient Quality
+        const qualityCell = document.createElement('td');
+
+        // Create a container div if you want to group them visually
+        const qualityInput = document.createElement('input');
+        qualityInput.type = 'number';
+        qualityInput.placeholder = 'Quality';
+        qualityInput.value = potion.ingredientQuality || 50;
+        qualityInput.onchange = () => { potion.ingredientQuality = parseInt(qualityInput.value) || 50; };
+
+        const modifierInput = document.createElement('input');
+        modifierInput.type = 'number';
+        modifierInput.placeholder = 'Modifier';
+        modifierInput.value = potion.qualityModifier || 10;
+        modifierInput.onchange = () => { potion.qualityModifier = parseInt(modifierInput.value) || 10; };
+
+        qualityCell.appendChild(qualityInput);
+        qualityCell.appendChild(modifierInput);
 
         // Actions
         const actionCell = document.createElement('td');
         const consumeBtn = document.createElement('button');
         consumeBtn.innerText = 'Consume';
         consumeBtn.onclick = () => {
-            if (potion.type === 'HP') restoreHP(potion.amount);
-            else restoreMana(potion.amount);
+            let amount = 0;
+            if (potion.type === 'HP') {
+                const q = potion.ingredientQuality || 100;
+                const qm = potion.qualityModifier || 20;
+                amount = Math.round(500 * (100 / q) * (20 / qm));
+                restoreHP(amount);
+            } else {
+                amount = Math.round(1000 * (100 / q) * (20 / qm));
+                restoreMana(amount);
+            }
+
             potions.splice(index, 1);
             renderPotions();
         };
@@ -620,7 +641,7 @@ function renderPotions() {
         actionCell.appendChild(deleteBtn);
 
         row.appendChild(typeCell);
-        row.appendChild(amountCell);
+        row.appendChild(qualityCell);
         row.appendChild(actionCell);
         tbody.appendChild(row);
     });
