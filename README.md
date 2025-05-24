@@ -42,6 +42,8 @@ Any spell cast is assumed to hit unless the target takes the dodge reaction (a n
 Physical attacks can be performed within 1 tile of the target (unless otherwise specified) and can be dodged. They deal power damage to their target.
 Players have built in percentage damage resistance based on their fortitude (starting from fortitude 20) where up to 40% of damage can be mitigated. This calculation is built into the character sheet.
 
+Taking over 15% of max health damage in a single hit may cause the user to lose concentration on any spells that have a duration longer than instant. The damaged character must roll a constitution > 12 to stay focused.
+
 ## Common Spells
 
 Common spells are available to all magic users once they have learned the spell. A list of available spells is as below. Spells can be learned at 3 different levels; normal, greater, and supreme. Generally first years will only be capable of learning normal level common spells.
