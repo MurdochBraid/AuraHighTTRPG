@@ -347,6 +347,13 @@ function useCunningAction() {
     if (ca > 0) document.getElementById('cunningActions').innerText = ca - 1;
 }
 
+function regainCunningActions() {
+    const speed = parseInt(document.getElementById('speed').dataset.base) || 0;
+    const cunning = Math.floor(speed / 20);
+
+    document.getElementById('cunningActions').innerText = cunning;
+}
+
 function rest() {
     const duration = +document.getElementById('restDuration').value;
     if (isNaN(duration) || duration <= 0) {
