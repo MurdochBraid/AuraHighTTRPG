@@ -924,7 +924,7 @@ function showTab(containerId) {
     document.getElementById(containerId).classList.add('active-tab');
 
     // Highlight the correct button
-    const tabIndex = ['spellsContainer', 'powersContainer', 'inventoryContainer'].indexOf(containerId);
+    const tabIndex = ['spellsContainer', 'powersContainer', 'inventoryContainer', 'loreContainer'].indexOf(containerId);
     if (tabIndex !== -1) {
         document.querySelectorAll('.tab-button')[tabIndex].classList.add('active');
     }

@@ -193,6 +193,12 @@
     </div>
 
     <div class="stat">
+      <label>Perception</label>
+      <div class="stat-main" id="perception" data-base="0">0</div>
+      <input type="number" class="skill-modifier" id="perception-mod" placeholder="+0" />
+    </div>
+
+    <div class="stat">
       <label>Resolve</label>
       <div class="stat-main" id="resolve" data-base="0">0</div>
       <input type="number" class="skill-modifier" id="resolve-mod" placeholder="+0" />
@@ -213,6 +219,7 @@
       <button class="tab-button active" onclick="showTab('spellsContainer')">Spells</button>
       <button class="tab-button" onclick="showTab('powersContainer')">Powers</button>
       <button class="tab-button" onclick="showTab('inventoryContainer')">Inventory</button>
+      <button class="tab-button" onclick="showTab('loreContainer')">Lore</button>
     </div>
 
     <div id="spellsContainer" class="tab-content active-tab">
@@ -306,6 +313,13 @@
             <!-- Powers will be added here -->
           </tbody>
         </table>
+      </div>
+    </div>
+
+    <div id="loreContainer" class="tab-content">
+      <div class="powers-container">
+        <h2>Lore</h2>
+        <textarea rows="10" style="width: 40%;"></textarea>
       </div>
     </div>
   </div>
