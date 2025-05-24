@@ -185,10 +185,11 @@ function saveStats() {
 
 function updateDerivedStats() {
     const fortitude = parseInt(document.getElementById('fortitude').dataset.base) || 0;
+    const power = parseInt(document.getElementById('power').dataset.base) || 0;
     const magic = parseInt(document.getElementById('magic').dataset.base) || 0;
     const speed = parseInt(document.getElementById('speed').dataset.base) || 0;
 
-    const maxHP = fortitude * 5;
+    const maxHP = fortitude * 5 + power;
     const maxMana = magic * 10;
     const cunning = Math.floor(speed / 20);
 
