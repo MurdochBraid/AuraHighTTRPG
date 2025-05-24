@@ -744,6 +744,7 @@ function saveToFile() {
         cunningActions: document.getElementById('cunningActions').innerText,
         spells: [],
         powers: powers,
+        lore: document.getElementById('lore').value,
         characterImage: document.getElementById('characterImage').src || null,
         inventory: [],
         potions: potions,
@@ -903,6 +904,8 @@ function loadCharacterData(data) {
             }
         })
     }
+
+    document.getElementById('lore').value = data.lore;
 
     renderPowers();
     updateSpellButtons();
