@@ -33,7 +33,7 @@ The player may then take an action:
 
 More optional movement using remaining available tiles.
 
-The player may optionally consume a cunning action (fully restored on long rest) to perform another action.
+The player may optionally consume a cunning action (fully restored after combat end) to perform another action. Only one additional cunning action may be used a turn.
 Some spells, like haste, may grant a bonus turn on the turn they are cast and on following turns. If a bonus action is not used it is not passed on to the next turn.
 
 ### Dealing and taking damage
