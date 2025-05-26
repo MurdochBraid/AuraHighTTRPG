@@ -39,7 +39,7 @@ Some spells, like haste, may grant a bonus turn on the turn they are cast and on
 ### Dealing and taking damage
 Any spell cast is assumed to hit unless the target takes the dodge reaction (a number of speed / 20 dodge reactions may occur between a characters turns). The character taking the dodge action rolls 1d20 against their dodge challenge stat, they must meet or beat the challenge to perform the dodge. Not all effects can be dodged, this is at the discretion of the DM. Dodge attempts where the roll is below 4 critically fail and the character performing the failed dodge takes an aura loss.
 
-Physical attacks can be performed within 1 tile of the target (unless otherwise specified) and can be dodged. They deal power damage to their target.
+Physical attacks can be performed within 1 tile of the target (unless otherwise specified) and can be dodged. They deal (power / 10 d10) damage to their target.
 Players have built in percentage damage resistance based on their fortitude (starting from fortitude 20) where up to 40% of damage can be mitigated. This calculation is built into the character sheet.
 
 Taking over 15% of max health damage in a single hit may cause the user to lose concentration on any spells that have a duration longer than instant. The damaged character must roll a constitution > 12 to stay focused.
