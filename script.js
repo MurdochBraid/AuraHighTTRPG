@@ -905,7 +905,7 @@ function loadCharacterData(data) {
         })
     }
 
-    document.getElementById('lore').value = data.lore;
+    document.getElementById('lore').value = data.lore || "";
 
     renderPowers();
     updateSpellButtons();
