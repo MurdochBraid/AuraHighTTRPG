@@ -244,7 +244,7 @@ function refreshSkills() {
 
 
 function updateSpellButtons() {
-    const currentMana = parseInt(document.getElementById('currentMana').innerText) + document.getElementById('tempMana').innerText;
+    const currentMana = parseInt(document.getElementById('currentMana').innerText) + parseInt(document.getElementById('tempMana').innerText);
     const spellRows = document.querySelectorAll('#spellTableBody tr');
     spellRows.forEach(row => {
         const cost = parseInt(row.cells[2].innerText);
@@ -421,6 +421,27 @@ function restoreMana(amount) {
     current.innerText = Math.min(newMana, max);
 
     updateSpellButtons();
+}
+
+function healButton() {
+    let healAmount = parseInt(document.getElementById('damageTaken').value) || 0;
+
+    restoreHP(healAmount);
+    document.getElementById('damageTaken').value = '';
+}
+
+function sapMana() {
+    let sapAmount = parseInt(document.getElementById('manaInput').value) || 0;
+
+    useMana(sapAmount);
+    document.getElementById('manaInput').value = '';
+}
+
+function restoreManaButton() {
+    let restoreAmount = parseInt(document.getElementById('manaInput').value) || 0;
+
+    restoreMana(restoreAmount);
+    document.getElementById('manaInput').value = '';
 }
 
 function auraLoss() {
