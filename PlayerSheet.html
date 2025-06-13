@@ -73,6 +73,25 @@
       </div>
     </div>
 
+    <div class="stat">
+      <label>Dice Roller</label>
+      <div class="dice-controls">
+        <div class="dice-picker">
+          <input type="number" id="diceCount" min="1" placeholder="1">
+          <select id="diceType">
+            <option value="4">d4</option>
+            <option value="6">d6</option>
+            <option value="8">d8</option>
+            <option value="10" selected>d10</option>
+            <option value="20">d20</option>
+            <option value="100">d100</option>
+          </select>
+        </div>
+        <label><input type="checkbox" id="cowardMode"> Coward</label>
+        <button onclick="rollDice()">Roll</button>
+      </div>
+    </div>
+
   </div>
 
 
@@ -393,6 +412,8 @@
       </form>
     </div>
   </div>
+
+  <div id="diceResultPopup"></div>
 
   <footer style="margin-top: 40px; display: flex; justify-content: space-between;">
     <button onclick="saveToFile()">Save Character</button>

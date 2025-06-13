@@ -743,6 +743,54 @@ function savePower() {
     closePowerModal();
 }
 
+function rollDice() {
+    const count = parseInt(document.getElementById('diceCount').value) || 1;
+    const sides = parseInt(document.getElementById('diceType').value);
+    const cowardCheckbox = document.getElementById('cowardMode');
+    const coward = cowardCheckbox.checked || count <= 1;
+    const rolls = [];
+
+    // Roll the main dice
+    for (let i = 0; i < count; i++) {
+        rolls.push(Math.ceil(Math.random() * sides));
+    }
+
+    let finalRolls = [...rolls];
+    let bonusRoll = null;
+
+    if (!coward) {
+        bonusRoll = Math.ceil(Math.random() * sides);
+        const half = sides / 2;
+
+        if (bonusRoll > half) {
+            // Discard lowest
+            const minIndex = finalRolls.indexOf(Math.min(...finalRolls));
+            finalRolls.splice(minIndex, 1);
+        } else {
+            // Discard highest
+            const maxIndex = finalRolls.indexOf(Math.max(...finalRolls));
+            finalRolls.splice(maxIndex, 1);
+        }
+
+        finalRolls.push(bonusRoll); // Add the bonus roll after discard
+    }
+
+    const total = finalRolls.reduce((a, b) => a + b, 0);
+    const message = `[${finalRolls.join(', ')}] = ${total}`;
+
+    showDiceResult(message);
+}
+
+
+function showDiceResult(message) {
+    const popup = document.getElementById('diceResultPopup');
+    popup.innerText = message;
+    popup.style.display = 'block';
+
+    setTimeout(() => {
+        popup.style.display = 'none';
+    }, 5000);
+}
 
 
 function saveToFile() {

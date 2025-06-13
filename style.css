@@ -506,3 +506,41 @@ button:disabled {
     cursor: not-allowed;
     opacity: 0.7;
 }
+
+#diceResultPopup {
+    display: none;
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #222;
+    color: white;
+    padding: 15px 25px;
+    border-radius: 10px;
+    font-size: 1.2em;
+    z-index: 999;
+}
+
+.dice-controls {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.dice-picker {
+    display: flex;
+    align-items: center;
+    border-radius: 5px;
+}
+
+.dice-picker input,
+.dice-picker select {
+    border: none;
+    outline: none;
+    width: 60px;
+}
+
+.dice-picker select {
+    margin-top: -5px;
+}
