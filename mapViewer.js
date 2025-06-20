@@ -78,18 +78,25 @@ function saveNote() {
 
     if (markers[key]) {
         markers[key].setIcon(icons[category]);
-        markers[key].unbindPopup().bindPopup(`${text}`);
+        markers[key].unbindPopup().bindPopup(getPopupContent(key, text));
     } else {
         const marker = L.marker(currentLatLng, {
             icon: icons[category]
         }).addTo(map)
-            .bindPopup(`${text}`);
+            .bindPopup(getPopupContent(key, text));
         markers[key] = marker;
     }
 
     closeNoteModal();
 }
 
+function deleteNote(key) {
+    if (markers[key]) {
+        map.removeLayer(markers[key]);
+        delete markers[key];
+    }
+    delete notes[key];
+}
 
 function closeNoteModal() {
     document.getElementById('noteModal').style.display = 'none';
@@ -112,6 +119,16 @@ function resizeMap() {
         map.invalidateSize();
     }
 }
+
+function getPopupContent(key, text) {
+    return `
+    <div>
+      <p style="margin: 0;">📌 ${text}</p>
+      <button onclick="deleteNote('${key}')" style="margin-top: 4px; padding: 2px 6px; font-size: 0.8em;">Delete</button>
+    </div>
+  `;
+}
+
 
 // Initial resize
 resizeMap();
@@ -149,9 +166,9 @@ document.getElementById('importNotes').addEventListener('change', function () {
                     markers[key] = L.marker(latlng, {
                         icon
                     }).addTo(map)
-                        .bindPopup(`${text}`);
+                        .bindPopup(getPopupContent(key, text));
                 } else {
-                    markers[key].setIcon(icon).unbindPopup().bindPopup(`${text}`);
+                    markers[key].setIcon(icon).unbindPopup().bindPopup(getPopupContent(key, text));
                 }
             });
 
