@@ -133,23 +133,23 @@ function saveStats() {
     const stats = [{
         id: 'inputIntelligence',
         display: 'intelligence',
-        max: 100
+        max: 250
     }, {
         id: 'inputPower',
         display: 'power',
-        max: 100
+        max: 250
     }, {
         id: 'inputFortitude',
         display: 'fortitude',
-        max: 100
+        max: 250
     }, {
         id: 'inputSpeed',
         display: 'speed',
-        max: 100
+        max: 250
     }, {
         id: 'inputMagic',
         display: 'magic',
-        max: 100
+        max: 250
     }];
 
     for (const stat of stats) {
