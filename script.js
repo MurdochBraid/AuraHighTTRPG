@@ -47,8 +47,14 @@ function updateStat(input) {
 
     // Update skills, temp HP, and temp mana
     refreshSkills();
+
+    if (input.id === "fortitude-mod") {
     updateTempHP();
+    }
+
+    if (input.id === "intelligence-mod") {
     updateTempMana();
+    }
 }
 
 function updateTempHP() {
