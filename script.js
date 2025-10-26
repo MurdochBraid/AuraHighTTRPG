@@ -1015,7 +1015,7 @@ function saveCharacterState() {
             intelligence: document.getElementById('intelligence')?.innerText || 0,
             power: document.getElementById('power')?.innerText || 0,
             fortitude: document.getElementById('fortitude')?.innerText || 0,
-            strength: document.getElementById('strength')?.innerText || 0,
+            speed: document.getElementById('speed')?.innerText || 0,
             magic: document.getElementById('magic')?.innerText || 0,
             attunement: document.getElementById('attunement')?.innerText || 0,
         },
