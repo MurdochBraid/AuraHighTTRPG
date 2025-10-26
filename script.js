@@ -49,11 +49,11 @@ function updateStat(input) {
     refreshSkills();
 
     if (input.id === "fortitude-mod") {
-    updateTempHP();
+        updateTempHP();
     }
 
     if (input.id === "intelligence-mod") {
-    updateTempMana();
+        updateTempMana();
     }
 }
 
@@ -931,7 +931,7 @@ function loadCharacterData(data) {
         spellTable.appendChild(row);
     });
 
-    powers = data.powers;
+    powers = data.powers || [];
     potions = data.potions || [];
 
     if (data.characterImage) {
@@ -943,7 +943,6 @@ function loadCharacterData(data) {
     // Currency
     document.getElementById('currency').value = +data.currency || 0;
 
-    // Inventory
     // Inventory
     const inventoryBody = document.getElementById('inventoryBody');
     inventoryBody.innerHTML = '';
@@ -1007,3 +1006,176 @@ function showTab(containerId) {
         document.querySelectorAll('.tab-button')[tabIndex].classList.add('active');
     }
 }
+
+function saveCharacterState() {
+    const state = {
+        characterName: document.getElementById('characterName')?.innerText || '',
+        characterDesc: document.getElementById('characterDesc')?.innerText || '',
+        stats: {
+            intelligence: document.getElementById('intelligence')?.innerText || 0,
+            power: document.getElementById('power')?.innerText || 0,
+            fortitude: document.getElementById('fortitude')?.innerText || 0,
+            strength: document.getElementById('strength')?.innerText || 0,
+            magic: document.getElementById('magic')?.innerText || 0,
+            attunement: document.getElementById('attunement')?.innerText || 0,
+        },
+        hp: {
+            current: document.getElementById('currentHP')?.innerText || 0,
+            max: document.getElementById('maxHP')?.innerText || 0,
+            temp: document.getElementById('tempHP')?.innerText || 0,
+        },
+        mana: {
+            current: document.getElementById('currentMana')?.innerText || 0,
+            max: document.getElementById('maxMana')?.innerText || 0,
+            temp: document.getElementById('tempMana')?.innerText || 0,
+        },
+        cunning: document.getElementById('cunningActions')?.innerText || 0,
+        imageSrc: document.getElementById('characterImage')?.src || '',
+        spells: Array.from(document.querySelectorAll('#spellTableBody tr')).map(row => ({
+            name: row.cells[0]?.innerText || '',
+            effect: row.cells[1]?.innerText || '',
+            cost: row.cells[2]?.innerText || '',
+            damage: row.cells[3]?.innerText || '',
+        })),
+        inventory: [],
+        potions: potions || [],
+        powers: powers || [],
+        lore: document.getElementById('lore').value,
+        currency: document.getElementById('currency').value || "0"
+    };
+
+    const inventoryRows = document.querySelectorAll('#inventoryBody tr');
+    inventoryRows.forEach(row => {
+        const input = row.querySelector('input[type="text"]');
+        if (input && input.value.trim() !== "") {
+            state.inventory.push({
+                description: input.value.trim()
+            });
+        }
+    });
+
+    state.skills = {};
+    document.querySelectorAll('#skillsDisplay .stat-main').forEach(mainDiv => {
+        const id = mainDiv.id;
+        const modInput = document.getElementById(`${id}-mod`);
+        const mod = modInput ? parseInt(modInput.value) || 0 : 0;
+
+        state.skills[id] = {
+            mod
+        };
+    });
+
+
+    localStorage.setItem('ttrpgCharacterState', JSON.stringify(state));
+    console.log('Character autosaved.');
+}
+
+function loadCharacterState() {
+    const saved = localStorage.getItem('ttrpgCharacterState');
+    if (!saved) return;
+
+    const state = JSON.parse(saved);
+
+    // Restore text and values
+    if (state.characterName) document.getElementById('characterName').innerText = state.characterName;
+    if (state.characterDesc) document.getElementById('characterDesc').innerText = state.characterDesc;
+
+    Object.entries(state.stats || {}).forEach(([key, value]) => {
+        const el = document.getElementById(key);
+        if (el) el.innerText = value;
+    });
+
+    document.getElementById('currentHP').innerText = state.hp?.current || 0;
+    document.getElementById('maxHP').innerText = state.hp?.max || 0;
+    document.getElementById('tempHP').innerText = state.hp?.temp || 0;
+
+    document.getElementById('currentMana').innerText = state.mana?.current || 0;
+    document.getElementById('maxMana').innerText = state.mana?.max || 0;
+    document.getElementById('tempMana').innerText = state.mana?.temp || 0;
+
+    document.getElementById('cunningActions').innerText = state.cunning || 0;
+
+    if (state.imageSrc) {
+        const img = document.getElementById('characterImage');
+        img.src = state.imageSrc;
+        img.style.display = 'block';
+    }
+
+    const spellTableBody = document.getElementById('spellTableBody');
+    spellTableBody.innerHTML = '';
+    (state.spells || []).forEach(spell => {
+        const row = spellTableBody.insertRow();
+        row.insertCell(0).innerText = spell.name;
+        row.insertCell(1).innerText = spell.effect;
+        row.insertCell(2).innerText = spell.cost;
+        row.insertCell(3).innerText = spell.damage;
+        const actionCell = row.insertCell(4);
+        actionCell.innerHTML = `<button onclick="editSpell(this)">Edit</button>`;
+    });
+
+    potions = state.ptions;
+    powers = state.powers || [];
+    document.getElementById('lore').value = state.lore || "";
+
+
+    document.getElementById('currency').value = +state.currency || 0;
+
+    // Inventory
+    const inventoryBody = document.getElementById('inventoryBody');
+    inventoryBody.innerHTML = '';
+    (state.inventory || []).forEach(item => {
+        const tr = document.createElement('tr');
+
+        const descTd = document.createElement('td');
+        const input = document.createElement('input');
+        input.type = "text";
+        input.value = item.description || '';
+        input.placeholder = "Item description";
+        descTd.appendChild(input);
+
+        const actionTd = document.createElement('td');
+        const delBtn = document.createElement('button');
+        delBtn.textContent = "Delete";
+        delBtn.onclick = () => tr.remove();
+        actionTd.appendChild(delBtn);
+
+        tr.appendChild(descTd);
+        tr.appendChild(actionTd);
+        inventoryBody.appendChild(tr);
+    });
+
+    // Skill Modifiers
+    if (state.skills) {
+        Object.entries(state.skills).forEach(([id, values]) => {
+            const modInput = document.getElementById(`${id}-mod`);
+
+            if (modInput) {
+                modInput.value = values.mod ?? 0;
+                updateSkill(modInput);
+            }
+        })
+    }
+
+
+    renderPowers();
+    updateSpellButtons();
+    toggleAttunement();
+
+    console.log('Character loaded from autosave.');
+}
+
+window.addEventListener('load', loadCharacterState);
+
+// Observe input and stat changes
+const autosaveElements = document.querySelectorAll('input, select, span');
+autosaveElements.forEach(el => {
+    el.addEventListener('change', saveCharacterState);
+    el.addEventListener('input', saveCharacterState);
+});
+
+document.body.addEventListener('click', e => {
+    if (e.target.tagName === 'BUTTON') {
+        // Delay slightly so the button’s logic runs first (e.g. HP is updated)
+        setTimeout(saveCharacterState, 50);
+    }
+});
