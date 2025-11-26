@@ -1035,7 +1035,9 @@ function saveCharacterState() {
             name: row.cells[0]?.innerText || '',
             effect: row.cells[1]?.innerText || '',
             cost: row.cells[2]?.innerText || '',
-            damage: row.cells[3]?.innerText || '',
+            castTime: row.cells[3]?.innerText || '',
+            range: row.cells[4]?.innerText || '',
+            damage: row.cells[5]?.innerText || '',
         })),
         inventory: [],
         potions: potions || [],
@@ -1108,7 +1110,9 @@ function loadCharacterState() {
         row.insertCell(0).innerText = spell.name;
         row.insertCell(1).innerText = spell.effect;
         row.insertCell(2).innerText = spell.cost;
-        row.insertCell(3).innerText = spell.damage;
+        row.insertCell(3).innerText = spell.castTime;
+        row.insertCell(4).innerText = spell.range;
+        row.insertCell(5).innerText = spell.damage;
         const actionCell = row.insertCell(4);
         actionCell.innerHTML = `<button onclick="editSpell(this)">Edit</button>`;
     });
