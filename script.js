@@ -1113,7 +1113,7 @@ function loadCharacterState() {
         row.insertCell(3).innerText = spell.castTime;
         row.insertCell(4).innerText = spell.range;
         row.insertCell(5).innerText = spell.damage;
-        const actionCell = row.insertCell(4);
+        const actionCell = row.insertCell(6);
         actionCell.innerHTML = `<button onclick="editSpell(this)">Edit</button>`;
     });
 
