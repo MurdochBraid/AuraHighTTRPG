@@ -1,618 +1,236 @@
-let editingSpellRow = null;
+'use strict';
 
-function openModal() {
-    document.getElementById('statsModal').style.display = 'block';
+/* =========================================================================
+   CHARACTER STATE MODEL
+   -------------------------------------------------------------------------
+   `state` is the single source of truth for the whole character sheet.
+   The DOM is never read to figure out "what the character currently is" —
+   it only ever displays whatever is in `state`. All game math lives in
+   computeDerived(), a pure function of `state`, so it's easy to test,
+   reason about, and reuse (e.g. for saving/loading, or a future stat page).
 
+   Flow for every user action:
+     1. mutate `state`
+     2. commit() -> recompute derived values, re-render DOM, autosave
+   ========================================================================= */
 
-    // Set the values based off current values
+const STAT_KEYS = ['intelligence', 'power', 'fortitude', 'speed', 'magic'];
 
-    document.getElementById('inputName').value = document.getElementById('characterName').innerText;
-    document.getElementById('classSelect').value = document.getElementById('displayClass').innerText;
-    document.getElementById('inputDescription').value = document.getElementById('classDescription').innerText;
-    document.getElementById('inputIntelligence').value = document.getElementById('intelligence').dataset.base;
-    document.getElementById('inputPower').value = document.getElementById('power').dataset.base;
-    document.getElementById('inputFortitude').value = document.getElementById('fortitude').dataset.base;
-    document.getElementById('inputSpeed').value = document.getElementById('speed').dataset.base;
-    document.getElementById('inputMagic').value = document.getElementById('magic').dataset.base;
-    document.getElementById('inputAttunement').value = document.getElementById('attunement').innerText;
+const SKILL_KEYS = [
+    'alchemy', 'arcana', 'curse', 'illusion', 'rune_crafting', 'summoning',
+    'athletics', 'beast_handling', 'constitution', 'diplomacy', 'dodge',
+    'perception', 'resolve', 'stealth',
+];
 
-    toggleAttunement();
+// Each skill's "auto" base, computed from effective ability scores + the
+// current HP penalty. `perception` has no formula — it's purely manual,
+// matching the original sheet's behavior.
+const SKILL_FORMULAS = {
+    alchemy: (e, p) => Math.floor(e.intelligence / 10) - 4 - p,
+    arcana: (e, p) => Math.floor(e.intelligence / 10) - 4 - p,
+    curse: (e, p) => Math.floor(e.intelligence / 10) - 4 - p,
+    illusion: (e, p) => Math.floor(e.intelligence / 10) - 4 - p,
+    rune_crafting: (e, p) => Math.floor(e.intelligence / 10) - 4 - p,
+    summoning: (e, p) => Math.floor(e.intelligence / 10) - 4 - p,
+    athletics: (e, p) => Math.floor(e.power / 10) - 4 - p,
+    beast_handling: (e, p) => Math.floor(e.power / 10) - 4 - p,
+    constitution: (e, p) => Math.floor(e.fortitude / 10) - 4 - p,
+    diplomacy: (e, p, aura) => Math.floor(e.intelligence / 10) + aura - 4 - p,
+    resolve: (e, p) => Math.floor(e.intelligence / 10) + Math.floor(e.fortitude / 10) - 4 - (p * 2),
+    stealth: (e, p) => Math.floor(e.speed / 10) - 4 - p,
+    dodge: (e, p) => Math.min(20, 20 - Math.floor(e.speed / 10) + 4 + p),
+    perception: null,
+};
+
+function createDefaultState() {
+    return {
+        meta: {
+            name: '',
+            class: 'Caster',
+            description: '',
+            imageSrc: null,
+        },
+        stats: {
+            intelligence: 10, power: 10, fortitude: 10, speed: 10, magic: 10,
+            attunement: 0,
+            aura: 0,
+        },
+        // Temporary combat modifiers entered next to each ability score.
+        modifiers: { intelligence: 0, power: 0, fortitude: 0, speed: 0, magic: 0 },
+        resources: {
+            hp: { current: 60, temp: 0 },
+            mana: { current: 100, temp: 0 },
+            cunningActions: { current: 0 },
+        },
+        skillModifiers: Object.fromEntries(SKILL_KEYS.map(k => [k, 0])),
+        spells: [],
+        powers: [],   // { name, description, maxUses, remainingUses }
+        potions: [],  // { type: 'HP'|'Mana', ingredientQuality, qualityModifier }
+        inventory: [], // { description }
+        currency: 0,
+        lore: '',
+    };
 }
 
-function closeModal() {
-    document.getElementById('statsModal').style.display = 'none';
-}
+let state = createDefaultState();
+let derived = null;
 
-document.addEventListener("DOMContentLoaded", () => {
-    const modifiers = document.querySelectorAll(".modifier");
+/* ---------- Derived values (pure function of state) ---------- */
 
-    modifiers.forEach(input => {
-        input.addEventListener("input", () => updateStat(input));
+function computeDerived(s) {
+    const eff = {};
+    STAT_KEYS.forEach(key => { eff[key] = s.stats[key] + s.modifiers[key]; });
+
+    const maxHP = s.stats.fortitude * 5 + s.stats.power;
+    const maxMana = s.stats.magic * 10;
+    const cunningMax = Math.floor(s.stats.speed / 20);
+
+    const hpRatio = maxHP > 0 ? s.resources.hp.current / maxHP : 1;
+    const penalty = Math.floor((1 - hpRatio) / 0.25); // -1 per 25% HP missing
+
+    const skillBase = {};
+    SKILL_KEYS.forEach(key => {
+        const formula = SKILL_FORMULAS[key];
+        skillBase[key] = formula ? formula(eff, penalty, s.stats.aura) : 0;
     });
 
-    const skillModifiers = document.querySelectorAll(".skill-modifier");
+    const skillTotal = {};
+    SKILL_KEYS.forEach(key => { skillTotal[key] = skillBase[key] + s.skillModifiers[key]; });
 
-    skillModifiers.forEach(input => {
-        input.addEventListener("input", () => updateSkill(input));
-    });
-});
-
-// Generic stat update function
-function updateStat(input) {
-    const statId = input.id.replace("-mod", "");
-    const statElem = document.getElementById(statId);
-    const base = parseInt(statElem.dataset.base, 10);
-    const mod = parseInt(input.value, 10) || 0;
-    statElem.textContent = base + mod;
-
-    // Update skills, temp HP, and temp mana
-    refreshSkills();
-
-    if (input.id === "fortitude-mod") {
-        updateTempHP();
-    }
-
-    if (input.id === "intelligence-mod") {
-        updateTempMana();
-    }
+    return { eff, maxHP, maxMana, cunningMax, hpRatio, penalty, skillBase, skillTotal };
 }
 
-function updateTempHP() {
-    const fortMod = parseInt(document.getElementById('fortitude-mod').value) || 0;
-
-    const tempHP = fortMod > 0 ? fortMod * 5 : 0;
-    document.getElementById('tempHP').innerText = tempHP;
-    const tempHPContainer = document.getElementById('tempHPContainer');
-    tempHPContainer.style.display = tempHP > 0 ? 'inline' : 'none';
+function recompute() {
+    derived = computeDerived(state);
 }
 
-function updateTempMana() {
-    const magicMod = parseInt(document.getElementById('magic-mod').value) || 0;
-
-    const tempMana = magicMod > 0 ? magicMod * 10 : 0;
-    document.getElementById('tempMana').innerText = tempMana;
-    const tempManaContainer = document.getElementById('tempManaContainer');
-    tempManaContainer.style.display = tempMana > 0 ? 'inline' : 'none';
-
-    updateSpellButtons();
+/** Every mutation ends with commit(): recompute -> render -> autosave. */
+function commit() {
+    recompute();
+    renderAll();
+    persist();
 }
 
-function updateSkill(input) {
-    const skillId = input.id.replace("-mod", "");
-    const skillElem = document.getElementById(skillId);
-    const base = parseInt(skillElem.dataset.base, 10);
-    const mod = parseInt(input.value, 10) || 0;
-    skillElem.textContent = base + mod;
+/* Ability-score temp modifiers refresh the temp HP/Mana pools. These pools
+   are real state (not purely derived) because damage/spending can deplete
+   them independently until the modifier is changed again. */
+function refreshTempHP() {
+    state.resources.hp.temp = state.modifiers.fortitude > 0 ? state.modifiers.fortitude * 5 : 0;
+}
+function refreshTempMana() {
+    state.resources.mana.temp = state.modifiers.magic > 0 ? state.modifiers.magic * 10 : 0;
 }
 
-// Reset all modifiers and restore base stat values
-function resetModifiers() {
-    const modifiers = document.querySelectorAll(".modifier");
-    modifiers.forEach(input => {
-        input.value = "";
-        updateStat(input);
-    });
+/* =========================================================================
+   RENDERING — one-way data flow: state -> DOM
+   ========================================================================= */
+
+function byId(id) { return document.getElementById(id); }
+
+function escapeHtml(str) {
+    return String(str ?? '').replace(/[&<>"']/g, ch => (
+        { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]
+    ));
 }
 
-function toggleAttunement() {
-    const classValue = document.getElementById('classSelect').value;
-    const attunementInput = document.getElementById('attunementContainer');
-    const attunementDisplay = document.getElementById('attunementDisplay');
-
-    if (classValue === 'Spirit Guardian') {
-        attunementInput.style.display = 'block';
-        attunementDisplay.style.display = 'flex';
-    } else {
-        attunementInput.style.display = 'none';
-        attunementDisplay.style.display = 'none';
-    }
-}
-
-function validateStat(value, max) {
-    const num = parseInt(value);
-    return !isNaN(num) && num >= 0 && num <= max;
-}
-
-function setStatValue(statId, newBaseValue) {
-    const statElem = document.getElementById(statId);
-    if (!statElem) return;
-
-    // Update base value attribute
-    statElem.dataset.base = newBaseValue;
-
-    // Check for an associated modifier input
-    const modInput = document.getElementById(`${statId}-mod`);
-    const modifier = modInput ? parseInt(modInput.value || "0", 10) : 0;
-
-    // Update displayed value with base + modifier
-    statElem.textContent = newBaseValue + modifier;
-}
-
-function getStatValue(statId) {
-    const statElem = document.getElementById(statId);
-    if (!statElem) return 0;
-
-    return statElem.innerHTML;
-}
-
-function saveStats() {
-    const stats = [{
-        id: 'inputIntelligence',
-        display: 'intelligence',
-        max: 250
-    }, {
-        id: 'inputPower',
-        display: 'power',
-        max: 250
-    }, {
-        id: 'inputFortitude',
-        display: 'fortitude',
-        max: 250
-    }, {
-        id: 'inputSpeed',
-        display: 'speed',
-        max: 250
-    }, {
-        id: 'inputMagic',
-        display: 'magic',
-        max: 250
-    }];
-
-    for (const stat of stats) {
-        const input = document.getElementById(stat.id).value;
-        if (!validateStat(input, stat.max)) {
-            alert(`${stat.display.charAt(0).toUpperCase() + stat.display.slice(1)} must be between 0 and ${stat.max}`);
-            return;
-        }
-        setStatValue(stat.display, +input);
-    }
-
-    const classValue = document.getElementById('classSelect').value;
-    if (classValue === 'Spirit Guardian') {
-        const attunementVal = document.getElementById('inputAttunement').value;
-        if (!validateStat(attunementVal, 20)) {
-            alert("Attunement must be between 0 and 20");
-            return;
-        }
-        document.getElementById('attunement').innerText = attunementVal;
-    }
-
-    // Update the character name and class + description
-    document.getElementById('characterName').innerText = document.getElementById('inputName').value;
-    document.getElementById('displayClass').innerText = document.getElementById('classSelect').value;
-    document.getElementById('classDescription').innerText = document.getElementById('inputDescription').value;
-
-    document.getElementById('characterDesc').innerText = document.getElementById('classSelect').value + " - " + document.getElementById('inputDescription').value;
-
-    updateDerivedStats();
-
-    closeModal();
-}
-
-function updateDerivedStats() {
-    const fortitude = parseInt(document.getElementById('fortitude').dataset.base) || 0;
-    const power = parseInt(document.getElementById('power').dataset.base) || 0;
-    const magic = parseInt(document.getElementById('magic').dataset.base) || 0;
-    const speed = parseInt(document.getElementById('speed').dataset.base) || 0;
-
-    const maxHP = fortitude * 5 + power;
-    const maxMana = magic * 10;
-    const cunning = Math.floor(speed / 20);
-
-    document.getElementById('maxHP').innerText = maxHP;
-    document.getElementById('currentHP').innerText = maxHP;
-    document.getElementById('maxMana').innerText = maxMana;
-    document.getElementById('currentMana').innerText = maxMana;
-    document.getElementById('cunningActions').innerText = cunning;
-
-    // Update the values of all of my skills here too
-    refreshSkills();
-
-    // Retrigger any modifiers for skills
-    const skillModifiers = document.querySelectorAll(".skill-modifier");
-
-    skillModifiers.forEach(input => {
-        updateSkill(input);
-    });
-
-    updateSpellButtons();
-    updateBodyBackground();
-}
-
-
-function refreshSkills() {
-    const intelligence = parseInt(document.getElementById('intelligence').innerText) || 0;
-    const power = parseInt(document.getElementById('power').innerText) || 0;
-    const fortitude = parseInt(document.getElementById('fortitude').innerText) || 0;
-    const speed = parseInt(document.getElementById('speed').innerText) || 0;
-    const aura = parseInt(document.getElementById('aura').innerText) || 0;
-
-    const currentHP = parseInt(document.getElementById('currentHP').innerText) || 0;
-    const maxHP = parseInt(document.getElementById('maxHP').innerText) || 1; // Avoid divide by 0
-    const hpRatio = currentHP / maxHP;
-    const penalty = Math.floor((1 - hpRatio) / 0.25); // -1 per 25% missing
-
-    setStatValue('alchemy', Math.floor(intelligence / 10) - 4 - penalty);
-    setStatValue('arcana', Math.floor(intelligence / 10) - 4 - penalty);
-    setStatValue('curse', Math.floor(intelligence / 10) - 4 - penalty);
-    setStatValue('illusion', Math.floor(intelligence / 10) - 4 - penalty);
-    setStatValue('rune_crafting', Math.floor(intelligence / 10) - 4 - penalty);
-    setStatValue('summoning', Math.floor(intelligence / 10) - 4 - penalty);
-    setStatValue('athletics', Math.floor(power / 10) - 4 - penalty);
-    setStatValue('beast_handling', Math.floor(power / 10) - 4 - penalty);
-    setStatValue('constitution', Math.floor(fortitude / 10) - 4 - penalty);
-    setStatValue('diplomacy', Math.floor(intelligence / 10) + aura - 4 - penalty);
-    setStatValue('resolve', Math.floor(intelligence / 10) + Math.floor(fortitude / 10) - 4 - (penalty * 2));
-    setStatValue('stealth', Math.floor(speed / 10) - 4 - penalty);
-
-    setStatValue('dodge', Math.min(20, 20 - Math.floor(speed / 10) + 4 + penalty));
-}
-
-
-function updateSpellButtons() {
-    const currentMana = parseInt(document.getElementById('currentMana').innerText) + parseInt(document.getElementById('tempMana').innerText);
-    const spellRows = document.querySelectorAll('#spellTableBody tr');
-    spellRows.forEach(row => {
-        const cost = parseInt(row.cells[2].innerText);
-        const castButton = row.querySelector('.cast-button');
-        if (castButton) {
-            castButton.disabled = cost > currentMana;
-        }
-    });
-}
-
-function takeDamage() {
-    let damage = parseInt(document.getElementById('damageTaken').value);
-    if (isNaN(damage) || damage <= 0) return;
-
-    // Calculate Fortitude-based damage reduction
-    const fort = parseInt(document.getElementById('fortitude').getAttribute('data-base')) || 0;
-    const fortMod = parseInt(document.getElementById('fortitude-mod').value) || 0;
-    const totalFort = fort + fortMod;
-    let damageReduction = 0;
-
-    if (totalFort > 20) {
-        damageReduction = Math.min(40, 40 * ((totalFort - 20) / 80) ** 0.6);
-    }
-
-    let reducedDamage = Math.ceil(damage * (1 - damageReduction / 100));
-
-    let currentHP = parseInt(document.getElementById('currentHP').innerText);
-    let tempHP = parseInt(document.getElementById('tempHP').innerText);
-
-    if (tempHP > 0) {
-        if (reducedDamage <= tempHP) {
-            tempHP -= reducedDamage;
-            reducedDamage = 0;
-        } else {
-            reducedDamage -= tempHP;
-            tempHP = 0;
-        }
-        document.getElementById('tempHP').innerText = tempHP;
-        if (tempHP === 0) {
-            document.getElementById('tempHPContainer').style.display = 'none';
-        }
-    }
-
-    currentHP = Math.max(currentHP - reducedDamage, 0);
-    document.getElementById('currentHP').innerText = currentHP;
-    document.getElementById('damageTaken').value = '';
-
-    // Possibly apply any damage skill penalties
-    refreshSkills();
-    updateBodyBackground();
-}
-
-function updateBodyBackground() {
-    const currentHP = parseInt(document.getElementById('currentHP').innerText) || 0;
-    const maxHP = parseInt(document.getElementById('maxHP').innerText) || 1;
-
-    const missingRatio = 1 - (currentHP / maxHP);
-    const intensity = Math.pow(missingRatio, 2); // Sharper effect at low HP
-
-    // From light gray (#1e1e1e) → maroon (#800000)
-    const baseR = 30, baseG = 30, baseB = 30;
-    const targetR = 128, targetG = 0, targetB = 0;
-
-    const r = Math.floor(baseR + (targetR - baseR) * intensity);
-    const g = Math.floor(baseG + (targetG - baseG) * intensity);
-    const b = Math.floor(baseB + (targetB - baseB) * intensity);
-
-    document.body.style.backgroundColor = `rgb(${r}, ${g}, ${b})`;
-}
-
-function useMana(cost) {
-
-    if (isNaN(cost) || cost <= 0) return;
-
-    let currentMana = parseInt(document.getElementById('currentMana').innerText);
-    let tempMana = parseInt(document.getElementById('tempMana').innerText);
-
-    if (tempMana > 0) {
-        if (cost <= tempMana) {
-            tempMana -= cost;
-            cost = 0;
-        } else {
-            cost -= tempMana;
-            tempMana = 0;
-        }
-        document.getElementById('tempMana').innerText = tempMana;
-        if (tempMana === 0) {
-            document.getElementById('tempManaContainer').style.display = 'none';
-        }
-    }
-
-    currentMana = Math.max(currentMana - cost, 0);
-    document.getElementById('currentMana').innerText = currentMana;
-
-    updateSpellButtons();
-}
-
-function useCunningAction() {
-    let ca = parseInt(document.getElementById('cunningActions').innerText);
-    if (ca > 0) document.getElementById('cunningActions').innerText = ca - 1;
-}
-
-function regainCunningActions() {
-    const speed = parseInt(document.getElementById('speed').dataset.base) || 0;
-    const cunning = Math.floor(speed / 20);
-
-    document.getElementById('cunningActions').innerText = cunning;
-}
-
-function rest() {
-    const duration = +document.getElementById('restDuration').value;
-    if (isNaN(duration) || duration <= 0) {
-        alert("Please enter a valid rest duration (in hours).");
-        return;
-    }
-
-    const maxHP = parseInt(document.getElementById('maxHP').innerText);
-    const currentHP = parseInt(document.getElementById('currentHP').innerText);
-    const maxMana = parseInt(document.getElementById('maxMana').innerText);
-    const currentMana = parseInt(document.getElementById('currentMana').innerText);
-
-    const fortitude = getStatValue('fortitude');
-    const magicReserves = getStatValue('magic');
-
-    // Calculate percentage restore per hour
-    const hpRegenPerHour = 5 + Math.floor(fortitude / 10); // e.g., Fortitude 20 = +2%
-    const manaRegenPerHour = 5 + Math.floor(magicReserves / 10);
-
-    const hpRestore = Math.floor((hpRegenPerHour * duration / 100) * maxHP);
-    const manaRestore = Math.floor((manaRegenPerHour * duration / 100) * maxMana);
-
-    const newHP = Math.min(maxHP, currentHP + hpRestore);
-    const newMana = Math.min(maxMana, currentMana + manaRestore);
-
-    document.getElementById('currentHP').innerText = newHP;
-    document.getElementById('currentMana').innerText = newMana;
-
-    // Clear the input
-    document.getElementById('restDuration').value = "";
-
-    resetModifiers();
-    refreshSkills();
-    updateBodyBackground();
-}
-
-function longRest() {
-    document.getElementById('currentHP').innerText = document.getElementById('maxHP').innerText;
-    document.getElementById('currentMana').innerText = document.getElementById('maxMana').innerText;
-
-    resetModifiers();
-    updateDerivedStats();
-
-    // Reset powers
-    powers.forEach(power => {
-        power.remainingUses = power.maxUses;
-    });
+function renderAll() {
+    renderMeta();
+    renderStatsAndSkills();
+    renderResources();
+    renderSpells();
     renderPowers();
-}
-
-function restoreHP(amount) {
-    const current = document.getElementById('currentHP');
-    const max = parseInt(document.getElementById('maxHP').innerText);
-    let newHP = parseInt(current.innerText) + amount;
-    current.innerText = Math.min(newHP, max);
-
-    refreshSkills();
+    renderPotions();
+    renderInventory();
+    renderMisc();
     updateBodyBackground();
-}
-
-function restoreMana(amount) {
-    const current = document.getElementById('currentMana');
-    const max = parseInt(document.getElementById('maxMana').innerText);
-    let newMana = parseInt(current.innerText) + amount;
-    current.innerText = Math.min(newMana, max);
-
     updateSpellButtons();
 }
 
-function healButton() {
-    let healAmount = parseInt(document.getElementById('damageTaken').value) || 0;
+function renderMeta() {
+    byId('characterName').innerText = state.meta.name;
+    byId('displayClass').innerText = state.meta.class;
+    byId('classDescription').innerText = state.meta.description;
+    byId('characterDesc').innerText = `${state.meta.class} - ${state.meta.description}`;
 
-    restoreHP(healAmount);
-    document.getElementById('damageTaken').value = '';
-}
-
-function sapMana() {
-    let sapAmount = parseInt(document.getElementById('manaInput').value) || 0;
-
-    useMana(sapAmount);
-    document.getElementById('manaInput').value = '';
-}
-
-function restoreManaButton() {
-    let restoreAmount = parseInt(document.getElementById('manaInput').value) || 0;
-
-    restoreMana(restoreAmount);
-    document.getElementById('manaInput').value = '';
-}
-
-function auraLoss() {
-    document.getElementById('aura').innerText = +document.getElementById('aura').innerText - 1;
-    refreshSkills();
-}
-
-function auraFarm() {
-    document.getElementById('aura').innerText = +document.getElementById('aura').innerText + 1;
-    refreshSkills();
-}
-
-function handleImageUpload() {
-    const input = document.getElementById('imageUpload');
-    const image = document.getElementById('characterImage');
-    const file = input.files[0];
-
-    if (file) {
-        const reader = new FileReader();
-
-        reader.onload = function (e) {
-            image.onload = function () {
-                image.style.display = 'block';
-
-                const maxWidth = 800;
-                const scaleFactor = Math.min(1, maxWidth / image.naturalWidth);
-
-                image.width = image.naturalWidth * scaleFactor;
-                image.height = image.naturalHeight * scaleFactor;
-            };
-
-            image.src = e.target.result;
-        };
-
-        reader.readAsDataURL(file);
-    }
-}
-
-function openSpellModal() {
-
-    if (!editingSpellRow) {
-        document.getElementById('spellForm').reset();
-    }
-
-    document.getElementById('spellModal').style.display = 'block';
-}
-
-function closeSpellModal() {
-    editingSpellRow = null;
-    document.getElementById('spellModal').style.display = 'none';
-}
-
-function saveSpell() {
-    const name = document.getElementById('spellName').value;
-    const effect = document.getElementById('spellEffect').value;
-    const cost = document.getElementById('spellCost').value;
-    const castTimeDuration = document.getElementById('spellCastTimeDuration').value;
-    const range = document.getElementById('spellRange').value;
-    const damage = document.getElementById('spellDamage').value;
-
-    if (editingSpellRow) {
-        const cells = editingSpellRow.getElementsByTagName('td');
-        cells[0].innerText = name;
-        cells[1].innerText = effect;
-        cells[2].innerText = cost;
-        cells[3].innerText = castTimeDuration;
-        cells[4].innerText = range;
-        cells[5].innerText = damage;
-        editingSpellRow = null;
+    const img = byId('characterImage');
+    if (state.meta.imageSrc) {
+        img.src = state.meta.imageSrc;
+        img.style.display = 'block';
     } else {
+        img.style.display = 'none';
+    }
+}
+
+function renderStatsAndSkills() {
+    STAT_KEYS.forEach(key => { byId(key).textContent = derived.eff[key]; });
+    byId('attunement').innerText = state.stats.attunement;
+    byId('aura').innerText = state.stats.aura;
+
+    SKILL_KEYS.forEach(key => { byId(key).textContent = derived.skillTotal[key]; });
+
+    const isSpiritGuardian = state.meta.class === 'Spirit Guardian';
+    byId('attunementDisplay').style.display = isSpiritGuardian ? 'flex' : 'none';
+}
+
+function renderResources() {
+    byId('currentHP').innerText = state.resources.hp.current;
+    byId('maxHP').innerText = derived.maxHP;
+    byId('tempHP').innerText = state.resources.hp.temp;
+    byId('tempHPContainer').style.display = state.resources.hp.temp > 0 ? 'inline' : 'none';
+
+    byId('currentMana').innerText = state.resources.mana.current;
+    byId('maxMana').innerText = derived.maxMana;
+    byId('tempMana').innerText = state.resources.mana.temp;
+    byId('tempManaContainer').style.display = state.resources.mana.temp > 0 ? 'inline' : 'none';
+
+    byId('cunningActions').innerText = state.resources.cunningActions.current;
+}
+
+function renderSpells() {
+    const tbody = byId('spellTableBody');
+    tbody.innerHTML = '';
+    state.spells.forEach((spell, index) => {
         const row = document.createElement('tr');
+        row.dataset.index = index;
         row.innerHTML = `
-    <td>${name}</td>
-    <td>${effect}</td>
-    <td>${cost}</td>
-    <td>${castTimeDuration}</td>
-    <td>${range}</td>
-    <td>${damage}</td>
+      <td>${escapeHtml(spell.name)}</td>
+      <td>${escapeHtml(spell.effect)}</td>
+      <td>${escapeHtml(spell.cost)}</td>
+      <td>${escapeHtml(spell.castTimeDuration)}</td>
+      <td>${escapeHtml(spell.range)}</td>
+      <td>${escapeHtml(spell.damage)}</td>
       <td>
         <button onclick="castSpell(this)" class="cast-button">Cast</button>
         <button onclick="editSpell(this)">Edit</button>
         <button class="delete-button" onclick="deleteSpell(this)">Delete</button>
-      </td>
-    `;
-        document.getElementById('spellTableBody').appendChild(row);
-    }
-
-    updateSpellButtons();
-
-    closeSpellModal();
+      </td>`;
+        tbody.appendChild(row);
+    });
 }
 
-function editSpell(button) {
-    const row = button.parentElement.parentElement;
-    const cells = row.getElementsByTagName('td');
-
-    document.getElementById('spellName').value = cells[0].innerText;
-    document.getElementById('spellEffect').value = cells[1].innerText;
-    document.getElementById('spellCost').value = cells[2].innerText;
-    document.getElementById('spellCastTimeDuration').value = cells[3].innerText;
-    document.getElementById('spellRange').value = cells[4].innerText;
-    document.getElementById('spellDamage').value = cells[5].innerText;
-
-    editingSpellRow = row;
-    openSpellModal();
-}
-
-function castSpell(button) {
-    const row = button.parentElement.parentElement;
-    const cells = row.getElementsByTagName('td');
-
-    let cost = cells[2].innerText;
-    useMana(cost)
-}
-
-function deleteSpell(button) {
-    const row = button.parentElement.parentElement;
-    row.remove();
-}
-
-function addInventoryItem() {
-    const tbody = document.getElementById("inventoryBody");
-
-    const tr = document.createElement("tr");
-
-    const descTd = document.createElement("td");
-    const input = document.createElement("input");
-    input.type = "text";
-    input.placeholder = "Item description";
-    descTd.appendChild(input);
-
-    const actionTd = document.createElement("td");
-    const delBtn = document.createElement("button");
-    delBtn.textContent = "Delete";
-    delBtn.onclick = () => tr.remove();
-    actionTd.appendChild(delBtn);
-
-    tr.appendChild(descTd);
-    tr.appendChild(actionTd);
-    tbody.appendChild(tr);
-}
-
-let potions = []; // Stores potions as objects
-
-function openPotionModal() {
-    document.getElementById('potionModal').style.display = 'block';
-    renderPotions();
-}
-
-function closePotionModal() {
-    document.getElementById('potionModal').style.display = 'none';
-}
-
-function addPotion() {
-    potions.push({ type: 'HP', amount: 10 });
-    renderPotions();
+function renderPowers() {
+    const tbody = byId('powersTableBody');
+    tbody.innerHTML = '';
+    state.powers.forEach((power, index) => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+      <td>${escapeHtml(power.name)}</td>
+      <td>${escapeHtml(power.description)}</td>
+      <td>${power.remainingUses} / ${power.maxUses}</td>
+      <td>
+        <button onclick="usePower(${index})" ${power.remainingUses <= 0 ? 'disabled' : ''}>Use</button>
+        <button onclick="deletePower(${index})">Delete</button>
+      </td>`;
+        tbody.appendChild(row);
+    });
 }
 
 function renderPotions() {
-    const tbody = document.getElementById('potionTableBody');
+    const tbody = byId('potionTableBody');
     tbody.innerHTML = '';
-    potions.forEach((potion, index) => {
+    state.potions.forEach((potion, index) => {
         const row = document.createElement('tr');
 
-        // Type
         const typeCell = document.createElement('td');
         const typeSelect = document.createElement('select');
         ['HP', 'Mana'].forEach(optionVal => {
@@ -622,55 +240,49 @@ function renderPotions() {
             if (potion.type === optionVal) option.selected = true;
             typeSelect.appendChild(option);
         });
-        typeSelect.onchange = () => { potion.type = typeSelect.value; };
+        typeSelect.onchange = () => { potion.type = typeSelect.value; persist(); };
         typeCell.appendChild(typeSelect);
 
-        // Amount
-        // Ingredient Quality
         const qualityCell = document.createElement('td');
-
-        // Create a container div if you want to group them visually
         const qualityInput = document.createElement('input');
         qualityInput.type = 'number';
         qualityInput.placeholder = 'Quality';
-        qualityInput.value = potion.ingredientQuality || 50;
-        qualityInput.onchange = () => { potion.ingredientQuality = parseInt(qualityInput.value) || 50; };
+        qualityInput.value = potion.ingredientQuality;
+        qualityInput.onchange = () => {
+            potion.ingredientQuality = parseInt(qualityInput.value, 10) || 50;
+            persist();
+        };
 
         const modifierInput = document.createElement('input');
         modifierInput.type = 'number';
         modifierInput.placeholder = 'Modifier';
-        modifierInput.value = potion.qualityModifier || 10;
-        modifierInput.onchange = () => { potion.qualityModifier = parseInt(modifierInput.value) || 10; };
+        modifierInput.value = potion.qualityModifier;
+        modifierInput.onchange = () => {
+            potion.qualityModifier = parseInt(modifierInput.value, 10) || 10;
+            persist();
+        };
 
         qualityCell.appendChild(qualityInput);
         qualityCell.appendChild(modifierInput);
 
-        // Actions
         const actionCell = document.createElement('td');
         const consumeBtn = document.createElement('button');
         consumeBtn.innerText = 'Consume';
         consumeBtn.onclick = () => {
-            let amount = 0;
+            const q = potion.ingredientQuality || 100;
+            const qm = potion.qualityModifier || 20;
             if (potion.type === 'HP') {
-                const q = potion.ingredientQuality || 100;
-                const qm = potion.qualityModifier || 20;
-                amount = Math.round(500 * (100 / q) * (20 / qm));
-                restoreHP(amount);
+                restoreHP(Math.round(500 * (100 / q) * (20 / qm)));
             } else {
-                amount = Math.round(1000 * (100 / q) * (20 / qm));
-                restoreMana(amount);
+                restoreMana(Math.round(1000 * (100 / q) * (20 / qm)));
             }
-
-            potions.splice(index, 1);
-            renderPotions();
+            state.potions.splice(index, 1);
+            commit();
         };
 
         const deleteBtn = document.createElement('button');
         deleteBtn.innerText = 'Delete';
-        deleteBtn.onclick = () => {
-            potions.splice(index, 1);
-            renderPotions();
-        };
+        deleteBtn.onclick = () => { state.potions.splice(index, 1); commit(); };
 
         actionCell.appendChild(consumeBtn);
         actionCell.appendChild(deleteBtn);
@@ -682,201 +294,587 @@ function renderPotions() {
     });
 }
 
-let powers = []; // stores all powers
+function renderInventory() {
+    const tbody = byId('inventoryBody');
+    tbody.innerHTML = '';
+    state.inventory.forEach((item, index) => {
+        const tr = document.createElement('tr');
 
-function addPower(name, description, maxUses) {
-    const power = {
-        name,
-        description,
-        maxUses,
-        remainingUses: maxUses
-    };
-    powers.push(power);
-    renderPowers();
-}
+        const descTd = document.createElement('td');
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.placeholder = 'Item description';
+        input.value = item.description;
+        input.addEventListener('change', () => {
+            state.inventory[index].description = input.value;
+            persist();
+        });
+        descTd.appendChild(input);
 
-function renderPowers() {
-    const tbody = document.getElementById('powersTableBody');
-    tbody.innerHTML = ''; // Clear
+        const actionTd = document.createElement('td');
+        const delBtn = document.createElement('button');
+        delBtn.textContent = 'Delete';
+        delBtn.onclick = () => { state.inventory.splice(index, 1); commit(); };
+        actionTd.appendChild(delBtn);
 
-    powers.forEach((power, index) => {
-        const row = document.createElement('tr');
-        row.innerHTML = `
-      <td>${power.name}</td>
-      <td>${power.description}</td>
-      <td>${power.remainingUses} / ${power.maxUses}</td>
-      <td>
-        <button onclick="usePower(${index})" ${power.remainingUses <= 0 ? 'disabled' : ''}>Use</button>
-        <button onclick="deletePower(${index})">Delete</button>
-      </td>
-    `;
-        tbody.appendChild(row);
+        tr.appendChild(descTd);
+        tr.appendChild(actionTd);
+        tbody.appendChild(tr);
     });
 }
 
-function usePower(index) {
-    if (powers[index].remainingUses > 0) {
-        powers[index].remainingUses--;
-        renderPowers();
+function renderMisc() {
+    byId('currency').value = state.currency;
+    byId('lore').value = state.lore;
+}
+
+function updateBodyBackground() {
+    const missingRatio = 1 - derived.hpRatio;
+    const intensity = Math.pow(Math.max(0, missingRatio), 2);
+    const baseR = 30, baseG = 30, baseB = 30;
+    const targetR = 128, targetG = 0, targetB = 0;
+    const r = Math.floor(baseR + (targetR - baseR) * intensity);
+    const g = Math.floor(baseG + (targetG - baseG) * intensity);
+    const b = Math.floor(baseB + (targetB - baseB) * intensity);
+    document.body.style.backgroundColor = `rgb(${r}, ${g}, ${b})`;
+}
+
+function updateSpellButtons() {
+    const availableMana = state.resources.mana.current + state.resources.mana.temp;
+    document.querySelectorAll('#spellTableBody tr').forEach(row => {
+        const spell = state.spells[+row.dataset.index];
+        const cost = parseInt(spell.cost, 10) || 0;
+        const btn = row.querySelector('.cast-button');
+        if (btn) btn.disabled = cost > availableMana;
+    });
+}
+
+/* =========================================================================
+   ACTIONS — mutate state, then commit()
+   ========================================================================= */
+
+function validateStat(value, max) {
+    const num = parseInt(value, 10);
+    return !isNaN(num) && num >= 0 && num <= max;
+}
+function capitalize(str) { return str.charAt(0).toUpperCase() + str.slice(1); }
+
+/* ----- Stats modal ----- */
+
+function openModal() {
+    byId('statsModal').style.display = 'block';
+    byId('inputName').value = state.meta.name;
+    byId('classSelect').value = state.meta.class;
+    byId('inputDescription').value = state.meta.description;
+    byId('inputIntelligence').value = state.stats.intelligence;
+    byId('inputPower').value = state.stats.power;
+    byId('inputFortitude').value = state.stats.fortitude;
+    byId('inputSpeed').value = state.stats.speed;
+    byId('inputMagic').value = state.stats.magic;
+    byId('inputAttunement').value = state.stats.attunement;
+    toggleAttunement();
+}
+
+function closeModal() {
+    byId('statsModal').style.display = 'none';
+}
+
+// Live preview while the modal is open: toggling the class dropdown shows/
+// hides both the modal's attunement field and the main page's attunement
+// stat, before Save is pressed (matches original behavior).
+function toggleAttunement() {
+    const isSpiritGuardian = byId('classSelect').value === 'Spirit Guardian';
+    byId('attunementContainer').style.display = isSpiritGuardian ? 'block' : 'none';
+    byId('attunementDisplay').style.display = isSpiritGuardian ? 'flex' : 'none';
+}
+
+function saveStats() {
+    const fields = [
+        { input: 'inputIntelligence', key: 'intelligence', max: 250 },
+        { input: 'inputPower', key: 'power', max: 250 },
+        { input: 'inputFortitude', key: 'fortitude', max: 250 },
+        { input: 'inputSpeed', key: 'speed', max: 250 },
+        { input: 'inputMagic', key: 'magic', max: 250 },
+    ];
+
+    const newStats = {};
+    for (const field of fields) {
+        const value = byId(field.input).value;
+        if (!validateStat(value, field.max)) {
+            alert(`${capitalize(field.key)} must be between 0 and ${field.max}`);
+            return;
+        }
+        newStats[field.key] = +value;
+    }
+
+    const classValue = byId('classSelect').value;
+    let attunement = state.stats.attunement;
+    if (classValue === 'Spirit Guardian') {
+        const attunementVal = byId('inputAttunement').value;
+        if (!validateStat(attunementVal, 20)) {
+            alert('Attunement must be between 0 and 20');
+            return;
+        }
+        attunement = +attunementVal;
+    }
+
+    Object.assign(state.stats, newStats);
+    state.stats.attunement = attunement;
+    state.meta.name = byId('inputName').value;
+    state.meta.class = classValue;
+    state.meta.description = byId('inputDescription').value;
+
+    // Editing base stats fully restores HP/Mana/Cunning Actions, matching
+    // the original sheet's behavior (think: leveling up).
+    const fresh = computeDerived(state);
+    state.resources.hp.current = fresh.maxHP;
+    state.resources.mana.current = fresh.maxMana;
+    state.resources.cunningActions.current = fresh.cunningMax;
+
+    closeModal();
+    commit();
+}
+
+/* ----- Ability score / skill modifiers ----- */
+
+function resetModifiers() {
+    STAT_KEYS.forEach(key => {
+        state.modifiers[key] = 0;
+        const input = byId(`${key}-mod`);
+        if (input) input.value = '';
+    });
+    refreshTempHP();
+    refreshTempMana();
+}
+
+function wireModifierInputs() {
+    document.querySelectorAll('.modifier').forEach(input => {
+        input.addEventListener('input', () => {
+            const key = input.id.replace('-mod', '');
+            state.modifiers[key] = parseInt(input.value, 10) || 0;
+            if (key === 'fortitude') refreshTempHP();
+            if (key === 'magic') refreshTempMana();
+            commit();
+        });
+    });
+
+    document.querySelectorAll('.skill-modifier').forEach(input => {
+        input.addEventListener('input', () => {
+            const key = input.id.replace('-mod', '');
+            state.skillModifiers[key] = parseInt(input.value, 10) || 0;
+            commit();
+        });
+    });
+}
+
+/* ----- HP / Mana / Cunning Actions ----- */
+
+function restoreHP(amount) {
+    state.resources.hp.current = Math.min(state.resources.hp.current + amount, derived.maxHP);
+}
+function restoreMana(amount) {
+    state.resources.mana.current = Math.min(state.resources.mana.current + amount, derived.maxMana);
+}
+
+function takeDamage() {
+    const damage = parseInt(byId('damageTaken').value, 10);
+    if (isNaN(damage) || damage <= 0) return;
+
+    const totalFort = derived.eff.fortitude;
+    let damageReduction = 0;
+    if (totalFort > 20) {
+        damageReduction = Math.min(40, 40 * ((totalFort - 20) / 80) ** 0.6);
+    }
+    let reducedDamage = Math.ceil(damage * (1 - damageReduction / 100));
+
+    if (state.resources.hp.temp > 0) {
+        if (reducedDamage <= state.resources.hp.temp) {
+            state.resources.hp.temp -= reducedDamage;
+            reducedDamage = 0;
+        } else {
+            reducedDamage -= state.resources.hp.temp;
+            state.resources.hp.temp = 0;
+        }
+    }
+
+    state.resources.hp.current = Math.max(state.resources.hp.current - reducedDamage, 0);
+    byId('damageTaken').value = '';
+    commit();
+}
+
+function healButton() {
+    const amount = parseInt(byId('damageTaken').value, 10) || 0;
+    restoreHP(amount);
+    byId('damageTaken').value = '';
+    commit();
+}
+
+function useMana(rawCost) {
+    let cost = parseInt(rawCost, 10);
+    if (isNaN(cost) || cost <= 0) return;
+
+    if (state.resources.mana.temp > 0) {
+        if (cost <= state.resources.mana.temp) {
+            state.resources.mana.temp -= cost;
+            cost = 0;
+        } else {
+            cost -= state.resources.mana.temp;
+            state.resources.mana.temp = 0;
+        }
+    }
+    state.resources.mana.current = Math.max(state.resources.mana.current - cost, 0);
+    commit();
+}
+
+function sapMana() {
+    const amount = parseInt(byId('manaInput').value, 10) || 0;
+    useMana(amount);
+    byId('manaInput').value = '';
+}
+
+function restoreManaButton() {
+    const amount = parseInt(byId('manaInput').value, 10) || 0;
+    restoreMana(amount);
+    byId('manaInput').value = '';
+    commit();
+}
+
+function useCunningAction() {
+    if (state.resources.cunningActions.current > 0) {
+        state.resources.cunningActions.current -= 1;
+        commit();
     }
 }
 
-function deletePower(index) {
-    powers.splice(index, 1);
-    renderPowers();
+function regainCunningActions() {
+    state.resources.cunningActions.current = derived.cunningMax;
+    commit();
 }
+
+function rest() {
+    const duration = +byId('restDuration').value;
+    if (isNaN(duration) || duration <= 0) {
+        alert('Please enter a valid rest duration (in hours).');
+        return;
+    }
+
+    const hpRegenPerHour = 5 + Math.floor(derived.eff.fortitude / 10);
+    const manaRegenPerHour = 5 + Math.floor(derived.eff.magic / 10);
+
+    const hpRestore = Math.floor((hpRegenPerHour * duration / 100) * derived.maxHP);
+    const manaRestore = Math.floor((manaRegenPerHour * duration / 100) * derived.maxMana);
+
+    state.resources.hp.current = Math.min(derived.maxHP, state.resources.hp.current + hpRestore);
+    state.resources.mana.current = Math.min(derived.maxMana, state.resources.mana.current + manaRestore);
+
+    byId('restDuration').value = '';
+    resetModifiers();
+    commit();
+}
+
+function longRest() {
+    state.resources.hp.current = derived.maxHP;
+    state.resources.mana.current = derived.maxMana;
+    resetModifiers();
+    state.powers.forEach(power => { power.remainingUses = power.maxUses; });
+    commit();
+}
+
+/* ----- Aura ----- */
+
+function auraLoss() { state.stats.aura -= 1; commit(); }
+function auraFarm() { state.stats.aura += 1; commit(); }
+
+/* ----- Image upload ----- */
+
+function handleImageUpload() {
+    const file = byId('imageUpload').files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = e => {
+        const probe = new Image();
+        probe.onload = () => {
+            state.meta.imageSrc = e.target.result;
+            commit();
+
+            const maxWidth = 800;
+            const scaleFactor = Math.min(1, maxWidth / probe.naturalWidth);
+            const displayed = byId('characterImage');
+            displayed.width = probe.naturalWidth * scaleFactor;
+            displayed.height = probe.naturalHeight * scaleFactor;
+        };
+        probe.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+}
+
+/* ----- Spells ----- */
+
+let editingSpellIndex = null;
+
+function openSpellModal() {
+    if (editingSpellIndex === null) byId('spellForm').reset();
+    byId('spellModal').style.display = 'block';
+}
+
+function closeSpellModal() {
+    editingSpellIndex = null;
+    byId('spellModal').style.display = 'none';
+}
+
+function saveSpell() {
+    const spell = {
+        name: byId('spellName').value,
+        effect: byId('spellEffect').value,
+        cost: byId('spellCost').value,
+        castTimeDuration: byId('spellCastTimeDuration').value,
+        range: byId('spellRange').value,
+        damage: byId('spellDamage').value,
+    };
+
+    if (editingSpellIndex !== null) {
+        state.spells[editingSpellIndex] = spell;
+        editingSpellIndex = null;
+    } else {
+        state.spells.push(spell);
+    }
+
+    closeSpellModal();
+    commit();
+}
+
+function editSpell(button) {
+    const index = +button.closest('tr').dataset.index;
+    const spell = state.spells[index];
+
+    byId('spellName').value = spell.name;
+    byId('spellEffect').value = spell.effect;
+    byId('spellCost').value = spell.cost;
+    byId('spellCastTimeDuration').value = spell.castTimeDuration;
+    byId('spellRange').value = spell.range;
+    byId('spellDamage').value = spell.damage;
+
+    editingSpellIndex = index;
+    openSpellModal();
+}
+
+function castSpell(button) {
+    const index = +button.closest('tr').dataset.index;
+    useMana(state.spells[index].cost);
+}
+
+function deleteSpell(button) {
+    const index = +button.closest('tr').dataset.index;
+    state.spells.splice(index, 1);
+    commit();
+}
+
+/* ----- Inventory ----- */
+
+function addInventoryItem() {
+    state.inventory.push({ description: '' });
+    commit();
+}
+
+/* ----- Potions ----- */
+
+function openPotionModal() { byId('potionModal').style.display = 'block'; }
+function closePotionModal() { byId('potionModal').style.display = 'none'; }
+
+function addPotion() {
+    state.potions.push({ type: 'HP', ingredientQuality: 50, qualityModifier: 10 });
+    commit();
+}
+
+/* ----- Powers ----- */
 
 function openPowerModal() {
-    document.getElementById('powerForm').reset();
-    document.getElementById('powerModal').style.display = 'block';
+    byId('powerForm').reset();
+    byId('powerModal').style.display = 'block';
 }
-
-function closePowerModal() {
-    document.getElementById('powerModal').style.display = 'none';
-}
+function closePowerModal() { byId('powerModal').style.display = 'none'; }
 
 function savePower() {
-    const name = document.getElementById('powerName').value.trim();
-    const description = document.getElementById('powerDescription').value.trim();
-    const uses = parseInt(document.getElementById('powerUses').value, 10);
+    const name = byId('powerName').value.trim();
+    const description = byId('powerDescription').value.trim();
+    const uses = parseInt(byId('powerUses').value, 10);
 
     if (!name || !description || isNaN(uses) || uses < 1) {
         alert('Please fill out all fields correctly.');
         return;
     }
 
-    addPower(name, description, uses);
+    state.powers.push({ name, description, maxUses: uses, remainingUses: uses });
     closePowerModal();
+    commit();
 }
 
-function rollDice() {
-    const count = parseInt(document.getElementById('diceCount').value) || 1;
-    const sides = parseInt(document.getElementById('diceType').value);
-    const cowardCheckbox = document.getElementById('cowardMode');
-    const coward = cowardCheckbox.checked || count <= 1;
-    const rolls = [];
-
-    // Roll the main dice
-    for (let i = 0; i < count; i++) {
-        rolls.push(Math.ceil(Math.random() * sides));
+function usePower(index) {
+    if (state.powers[index].remainingUses > 0) {
+        state.powers[index].remainingUses -= 1;
+        commit();
     }
+}
 
+function deletePower(index) {
+    state.powers.splice(index, 1);
+    commit();
+}
+
+/* ----- Dice roller (stateless — not part of the character model) ----- */
+
+function rollDice() {
+    const count = parseInt(byId('diceCount').value, 10) || 1;
+    const sides = parseInt(byId('diceType').value, 10);
+    const coward = byId('cowardMode').checked || count <= 1;
+
+    const rolls = Array.from({ length: count }, () => Math.ceil(Math.random() * sides));
     let finalRolls = [...rolls];
-    let bonusRoll = null;
 
     if (!coward) {
-        bonusRoll = Math.ceil(Math.random() * sides);
+        const bonusRoll = Math.ceil(Math.random() * sides);
         const half = sides / 2;
-
         if (bonusRoll > half) {
-            // Discard lowest
-            const minIndex = finalRolls.indexOf(Math.min(...finalRolls));
-            finalRolls.splice(minIndex, 1);
+            finalRolls.splice(finalRolls.indexOf(Math.min(...finalRolls)), 1);
         } else {
-            // Discard highest
-            const maxIndex = finalRolls.indexOf(Math.max(...finalRolls));
-            finalRolls.splice(maxIndex, 1);
+            finalRolls.splice(finalRolls.indexOf(Math.max(...finalRolls)), 1);
         }
-
-        finalRolls.push(bonusRoll); // Add the bonus roll after discard
+        finalRolls.push(bonusRoll);
     }
 
     const total = finalRolls.reduce((a, b) => a + b, 0);
-    const message = `[${finalRolls.join(', ')}] = ${total}`;
-
-    showDiceResult(message);
+    showDiceResult(`[${finalRolls.join(', ')}] = ${total}`);
 }
-
 
 function showDiceResult(message) {
-    const popup = document.getElementById('diceResultPopup');
+    const popup = byId('diceResultPopup');
     popup.innerText = message;
     popup.style.display = 'block';
-
-    setTimeout(() => {
-        popup.style.display = 'none';
-    }, 5000);
+    setTimeout(() => { popup.style.display = 'none'; }, 5000);
 }
 
+/* ----- Misc fields (currency / lore) ----- */
 
-function saveToFile() {
-    const characterData = {
-        name: document.getElementById('characterName').innerText,
-        class: document.getElementById('displayClass').innerText,
-        description: document.getElementById('classDescription').innerText,
-        stats: {
-            intelligence: document.getElementById('intelligence').innerText,
-            power: document.getElementById('power').innerText,
-            fortitude: document.getElementById('fortitude').innerText,
-            speed: document.getElementById('speed').innerText,
-            magic: document.getElementById('magic').innerText,
-            attunement: document.getElementById('attunement').innerText,
-        },
-        currentHP: document.getElementById('currentHP').innerText,
-        maxHP: document.getElementById('maxHP').innerText,
-        currentMana: document.getElementById('currentMana').innerText,
-        maxMana: document.getElementById('maxMana').innerText,
-        cunningActions: document.getElementById('cunningActions').innerText,
-        spells: [],
-        powers: powers,
-        lore: document.getElementById('lore').value,
-        characterImage: document.getElementById('characterImage').src || null,
-        inventory: [],
-        potions: potions,
-        currency: document.getElementById('currency').value || "0"
-    };
-
-    // Skill Modifiers
-    characterData.skills = {};
-    document.querySelectorAll('#skillsDisplay .stat-main').forEach(mainDiv => {
-        const id = mainDiv.id;
-        const modInput = document.getElementById(`${id}-mod`);
-        const mod = modInput ? parseInt(modInput.value) || 0 : 0;
-
-        characterData.skills[id] = {
-            mod
-        };
+function wireMiscInputs() {
+    byId('currency').addEventListener('change', e => {
+        state.currency = +e.target.value || 0;
+        persist();
     });
-
-    // Spells
-    const spellRows = document.querySelectorAll('#spellTableBody tr');
-    spellRows.forEach(row => {
-        const cells = row.querySelectorAll('td');
-        characterData.spells.push({
-            name: cells[0].innerText,
-            effect: cells[1].innerText,
-            cost: cells[2].innerText,
-            castTimeDuration: cells[3].innerText,
-            range: cells[4].innerText,
-            damage: cells[5].innerText
-        });
+    byId('lore').addEventListener('input', e => {
+        state.lore = e.target.value;
+        persist();
     });
+}
 
-    // Inventory
-    const inventoryRows = document.querySelectorAll('#inventoryBody tr');
-    inventoryRows.forEach(row => {
-        const input = row.querySelector('input[type="text"]');
-        if (input && input.value.trim() !== "") {
-            characterData.inventory.push({
-                description: input.value.trim()
-            });
+/* ----- Tabs (pure UI, not part of the data model) ----- */
+
+function showTab(containerId) {
+    document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active-tab'));
+    document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
+
+    byId(containerId).classList.add('active-tab');
+
+    const order = ['spellsContainer', 'powersContainer', 'inventoryContainer', 'loreContainer'];
+    const tabIndex = order.indexOf(containerId);
+    if (tabIndex !== -1) {
+        document.querySelectorAll('.tab-button')[tabIndex].classList.add('active');
+    }
+}
+
+/* =========================================================================
+   SAVE / LOAD — now trivial, because state IS the file format
+   ========================================================================= */
+
+// Save files (and old-format exports) can have stats/resources as strings
+// (the pre-refactor script read them out of the DOM via .innerText). Always
+// coerce to numbers here — "10" + 0 is the string "100", not the number 10.
+function toNumber(value, fallback) {
+    if (value === undefined || value === null || value === '') return fallback;
+    const num = typeof value === 'number' ? value : parseInt(value, 10);
+    return Number.isFinite(num) ? num : fallback;
+}
+
+function normalizeNumberMap(loadedMap, base) {
+    const result = { ...base };
+    Object.keys(base).forEach(key => {
+        if (loadedMap && loadedMap[key] !== undefined) {
+            result[key] = toNumber(loadedMap[key], base[key]);
         }
     });
+    return result;
+}
 
-    const blob = new Blob([JSON.stringify(characterData, null, 2)], {
-        type: 'application/json'
-    });
+// The pre-refactor export format stored HP/Mana/Cunning Actions as flat
+// top-level fields (currentHP, maxHP, ...) instead of nested under
+// `resources`. Support both shapes so old exports still load correctly.
+function normalizeResources(loaded, base) {
+    const hpSource = loaded.resources?.hp ?? { current: loaded.currentHP, temp: 0 };
+    const manaSource = loaded.resources?.mana ?? { current: loaded.currentMana, temp: 0 };
+    const cunningSource = loaded.resources?.cunningActions ?? { current: loaded.cunningActions };
+
+    return {
+        hp: {
+            current: toNumber(hpSource.current, base.hp.current),
+            temp: toNumber(hpSource.temp, base.hp.temp),
+        },
+        mana: {
+            current: toNumber(manaSource.current, base.mana.current),
+            temp: toNumber(manaSource.temp, base.mana.temp),
+        },
+        cunningActions: {
+            current: toNumber(cunningSource.current, base.cunningActions.current),
+        },
+    };
+}
+
+// v1 exports stored these as flat top-level fields (name, class,
+// description, characterImage) rather than nested under `meta`, and used
+// `characterImage` instead of `imageSrc` for the portrait. Support both.
+function normalizeMeta(loaded, base) {
+    const source = loaded.meta ?? {
+        name: loaded.name,
+        class: loaded.class,
+        description: loaded.description,
+        imageSrc: loaded.characterImage,
+    };
+    return {
+        name: source.name ?? base.name,
+        class: source.class ?? base.class,
+        description: source.description ?? base.description,
+        imageSrc: source.imageSrc ?? base.imageSrc,
+    };
+}
+
+function normalizeState(loaded) {
+    const base = createDefaultState();
+    return {
+        meta: normalizeMeta(loaded, base.meta),
+        stats: normalizeNumberMap(loaded.stats, base.stats),
+        modifiers: normalizeNumberMap(loaded.modifiers, base.modifiers),
+        resources: normalizeResources(loaded, base.resources),
+        skillModifiers: normalizeNumberMap(loaded.skillModifiers, base.skillModifiers),
+        spells: Array.isArray(loaded.spells) ? loaded.spells : [],
+        powers: Array.isArray(loaded.powers) ? loaded.powers : [],
+        potions: Array.isArray(loaded.potions) ? loaded.potions : [],
+        inventory: Array.isArray(loaded.inventory) ? loaded.inventory : [],
+        currency: toNumber(loaded.currency, base.currency),
+        lore: loaded.lore ?? '',
+    };
+}
+
+function saveToFile() {
+    const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
-
     const a = document.createElement('a');
     a.href = url;
-    a.download = characterData.name.replace(/\s+/g, '_') + '_character.json';
+    a.download = `${(state.meta.name || 'character').replace(/\s+/g, '_')}_character.json`;
     a.click();
     URL.revokeObjectURL(url);
 }
 
 function loadFromFile() {
-    document.getElementById('loadFileInput').click();
+    byId('loadFileInput').click();
 }
 
 function handleFileLoad(event) {
@@ -884,10 +882,11 @@ function handleFileLoad(event) {
     if (!file) return;
 
     const reader = new FileReader();
-    reader.onload = function (e) {
+    reader.onload = e => {
         try {
-            const data = JSON.parse(e.target.result);
-            loadCharacterData(data);
+            state = normalizeState(JSON.parse(e.target.result));
+            editingSpellIndex = null;
+            commit();
         } catch (err) {
             alert('Failed to load file: Invalid JSON format.');
         }
@@ -895,291 +894,35 @@ function handleFileLoad(event) {
     reader.readAsText(file);
 }
 
-function loadCharacterData(data) {
-    document.getElementById('characterName').innerText = data.name || '';
-    document.getElementById('displayClass').innerText = data.class || '';
-    document.getElementById('classSelect').value = data.class || '';
-    document.getElementById('classDescription').innerText = data.description || '';
-    document.getElementById('characterDesc').innerText = `${data.class} - ${data.description}`;
+/* ----- Autosave (localStorage) ----- */
 
-    setStatValue('intelligence', +data.stats.intelligence);
-    setStatValue('power', +data.stats.power);
-    setStatValue('fortitude', +data.stats.fortitude);
-    setStatValue('speed', +data.stats.speed);
-    setStatValue('magic', +data.stats.magic);
-    setStatValue('attunement', +data.stats.attunement);
+const AUTOSAVE_KEY = 'ttrpgCharacterState_v2';
 
-    updateDerivedStats();
-
-    const spellTable = document.getElementById('spellTableBody');
-    spellTable.innerHTML = '';
-    (data.spells || []).forEach(spell => {
-        const row = document.createElement('tr');
-        row.innerHTML = `
-      <td>${spell.name}</td>
-      <td>${spell.effect}</td>
-      <td>${spell.cost}</td>
-      <td>${spell.castTimeDuration}</td>
-      <td>${spell.range}</td>
-      <td>${spell.damage}</td>
-      <td>
-        <button onclick="castSpell(this)" class="cast-button">Cast</button>
-        <button onclick="editSpell(this)">Edit</button>
-        <button class="delete-button" onclick="deleteSpell(this)">Delete</button>
-      </td>
-    `;
-        spellTable.appendChild(row);
-    });
-
-    powers = data.powers || [];
-    potions = data.potions || [];
-
-    if (data.characterImage) {
-        const image = document.getElementById('characterImage');
-        image.src = data.characterImage;
-        image.style.display = 'block';
-    }
-
-    // Currency
-    document.getElementById('currency').value = +data.currency || 0;
-
-    // Inventory
-    const inventoryBody = document.getElementById('inventoryBody');
-    inventoryBody.innerHTML = '';
-    (data.inventory || []).forEach(item => {
-        const tr = document.createElement('tr');
-
-        const descTd = document.createElement('td');
-        const input = document.createElement('input');
-        input.type = "text";
-        input.value = item.description || '';
-        input.placeholder = "Item description";
-        descTd.appendChild(input);
-
-        const actionTd = document.createElement('td');
-        const delBtn = document.createElement('button');
-        delBtn.textContent = "Delete";
-        delBtn.onclick = () => tr.remove();
-        actionTd.appendChild(delBtn);
-
-        tr.appendChild(descTd);
-        tr.appendChild(actionTd);
-        inventoryBody.appendChild(tr);
-    });
-
-    // Skill Modifiers
-    if (data.skills) {
-        Object.entries(data.skills).forEach(([id, values]) => {
-            const modInput = document.getElementById(`${id}-mod`);
-
-            if (modInput) {
-                modInput.value = values.mod ?? 0;
-                updateSkill(modInput);
-            }
-        })
-    }
-
-    document.getElementById('lore').value = data.lore || "";
-
-    renderPowers();
-    updateSpellButtons();
-    toggleAttunement();
-}
-
-function showTab(containerId) {
-    // Hide all content blocks
-    document.querySelectorAll('.tab-content').forEach(el => {
-        el.classList.remove('active-tab');
-    });
-
-    // Remove active class from all buttons
-    document.querySelectorAll('.tab-button').forEach(btn => {
-        btn.classList.remove('active');
-    });
-
-    // Show selected content
-    document.getElementById(containerId).classList.add('active-tab');
-
-    // Highlight the correct button
-    const tabIndex = ['spellsContainer', 'powersContainer', 'inventoryContainer', 'loreContainer'].indexOf(containerId);
-    if (tabIndex !== -1) {
-        document.querySelectorAll('.tab-button')[tabIndex].classList.add('active');
+function persist() {
+    try {
+        localStorage.setItem(AUTOSAVE_KEY, JSON.stringify(state));
+    } catch (err) {
+        console.error('Autosave failed:', err);
     }
 }
 
-function saveCharacterState() {
-    const state = {
-        characterName: document.getElementById('characterName')?.innerText || '',
-        characterDesc: document.getElementById('characterDesc')?.innerText || '',
-        stats: {
-            intelligence: document.getElementById('intelligence')?.innerText || 0,
-            power: document.getElementById('power')?.innerText || 0,
-            fortitude: document.getElementById('fortitude')?.innerText || 0,
-            speed: document.getElementById('speed')?.innerText || 0,
-            magic: document.getElementById('magic')?.innerText || 0,
-            attunement: document.getElementById('attunement')?.innerText || 0,
-        },
-        hp: {
-            current: document.getElementById('currentHP')?.innerText || 0,
-            max: document.getElementById('maxHP')?.innerText || 0,
-            temp: document.getElementById('tempHP')?.innerText || 0,
-        },
-        mana: {
-            current: document.getElementById('currentMana')?.innerText || 0,
-            max: document.getElementById('maxMana')?.innerText || 0,
-            temp: document.getElementById('tempMana')?.innerText || 0,
-        },
-        cunning: document.getElementById('cunningActions')?.innerText || 0,
-        imageSrc: document.getElementById('characterImage')?.src || '',
-        spells: Array.from(document.querySelectorAll('#spellTableBody tr')).map(row => ({
-            name: row.cells[0]?.innerText || '',
-            effect: row.cells[1]?.innerText || '',
-            cost: row.cells[2]?.innerText || '',
-            castTime: row.cells[3]?.innerText || '',
-            range: row.cells[4]?.innerText || '',
-            damage: row.cells[5]?.innerText || '',
-        })),
-        inventory: [],
-        potions: potions || [],
-        powers: powers || [],
-        lore: document.getElementById('lore').value,
-        currency: document.getElementById('currency').value || "0"
-    };
-
-    const inventoryRows = document.querySelectorAll('#inventoryBody tr');
-    inventoryRows.forEach(row => {
-        const input = row.querySelector('input[type="text"]');
-        if (input && input.value.trim() !== "") {
-            state.inventory.push({
-                description: input.value.trim()
-            });
-        }
-    });
-
-    state.skills = {};
-    document.querySelectorAll('#skillsDisplay .stat-main').forEach(mainDiv => {
-        const id = mainDiv.id;
-        const modInput = document.getElementById(`${id}-mod`);
-        const mod = modInput ? parseInt(modInput.value) || 0 : 0;
-
-        state.skills[id] = {
-            mod
-        };
-    });
-
-
-    localStorage.setItem('ttrpgCharacterState', JSON.stringify(state));
-    console.log('Character autosaved.');
-}
-
-function loadCharacterState() {
-    const saved = localStorage.getItem('ttrpgCharacterState');
+function loadPersisted() {
+    const saved = localStorage.getItem(AUTOSAVE_KEY);
     if (!saved) return;
-
-    const state = JSON.parse(saved);
-
-    // Restore text and values
-    if (state.characterName) document.getElementById('characterName').innerText = state.characterName;
-    if (state.characterDesc) document.getElementById('characterDesc').innerText = state.characterDesc;
-
-    Object.entries(state.stats || {}).forEach(([key, value]) => {
-        const el = document.getElementById(key);
-        if (el) el.innerText = value;
-    });
-
-    document.getElementById('currentHP').innerText = state.hp?.current || 0;
-    document.getElementById('maxHP').innerText = state.hp?.max || 0;
-    document.getElementById('tempHP').innerText = state.hp?.temp || 0;
-
-    document.getElementById('currentMana').innerText = state.mana?.current || 0;
-    document.getElementById('maxMana').innerText = state.mana?.max || 0;
-    document.getElementById('tempMana').innerText = state.mana?.temp || 0;
-
-    document.getElementById('cunningActions').innerText = state.cunning || 0;
-
-    if (state.imageSrc) {
-        const img = document.getElementById('characterImage');
-        img.src = state.imageSrc;
-        img.style.display = 'block';
+    try {
+        state = normalizeState(JSON.parse(saved));
+    } catch (err) {
+        console.error('Failed to parse autosave, starting fresh.', err);
     }
-
-    const spellTableBody = document.getElementById('spellTableBody');
-    spellTableBody.innerHTML = '';
-    (state.spells || []).forEach(spell => {
-        const row = spellTableBody.insertRow();
-        row.insertCell(0).innerText = spell.name;
-        row.insertCell(1).innerText = spell.effect;
-        row.insertCell(2).innerText = spell.cost;
-        row.insertCell(3).innerText = spell.castTime;
-        row.insertCell(4).innerText = spell.range;
-        row.insertCell(5).innerText = spell.damage;
-        const actionCell = row.insertCell(6);
-        actionCell.innerHTML = `<button onclick="editSpell(this)">Edit</button>`;
-    });
-
-    potions = state.ptions;
-    powers = state.powers || [];
-    document.getElementById('lore').value = state.lore || "";
-
-
-    document.getElementById('currency').value = +state.currency || 0;
-
-    // Inventory
-    const inventoryBody = document.getElementById('inventoryBody');
-    inventoryBody.innerHTML = '';
-    (state.inventory || []).forEach(item => {
-        const tr = document.createElement('tr');
-
-        const descTd = document.createElement('td');
-        const input = document.createElement('input');
-        input.type = "text";
-        input.value = item.description || '';
-        input.placeholder = "Item description";
-        descTd.appendChild(input);
-
-        const actionTd = document.createElement('td');
-        const delBtn = document.createElement('button');
-        delBtn.textContent = "Delete";
-        delBtn.onclick = () => tr.remove();
-        actionTd.appendChild(delBtn);
-
-        tr.appendChild(descTd);
-        tr.appendChild(actionTd);
-        inventoryBody.appendChild(tr);
-    });
-
-    // Skill Modifiers
-    if (state.skills) {
-        Object.entries(state.skills).forEach(([id, values]) => {
-            const modInput = document.getElementById(`${id}-mod`);
-
-            if (modInput) {
-                modInput.value = values.mod ?? 0;
-                updateSkill(modInput);
-            }
-        })
-    }
-
-
-    renderPowers();
-    updateSpellButtons();
-    toggleAttunement();
-
-    console.log('Character loaded from autosave.');
 }
 
-window.addEventListener('load', loadCharacterState);
+/* =========================================================================
+   INIT
+   ========================================================================= */
 
-// Observe input and stat changes
-const autosaveElements = document.querySelectorAll('input, select, span');
-autosaveElements.forEach(el => {
-    el.addEventListener('change', saveCharacterState);
-    el.addEventListener('input', saveCharacterState);
-});
-
-document.body.addEventListener('click', e => {
-    if (e.target.tagName === 'BUTTON') {
-        // Delay slightly so the button’s logic runs first (e.g. HP is updated)
-        setTimeout(saveCharacterState, 50);
-    }
+document.addEventListener('DOMContentLoaded', () => {
+    loadPersisted();
+    wireModifierInputs();
+    wireMiscInputs();
+    commit();
 });
